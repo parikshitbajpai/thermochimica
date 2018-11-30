@@ -32,7 +32,7 @@
     !   10/06/2011      M.H.A. Piro     Original code
     !   12/20/2012      M.H.A. Piro     Check that the solution phase type is supported.
     !   03/04/2018      M.H.A. Piro     Added capability to handle SUBG phases.
-    !
+    !   11/29/2018      P. Bajpai       Added capability to handle IDWZ solutions.
     !
     ! Purpose:
     ! ========
@@ -192,7 +192,11 @@ subroutine ParseCSDataBlock
         
             ! Ideal mixture model
             case ('IDMX')
-                ! Do nothing.
+               ! Do nothing.
+
+            ! Aqueous solution model
+            case ('IDWZ')
+               ! Do nothing.
 
             ! Quasichemical Kohler-Toop model
             case ('QKTO')    
