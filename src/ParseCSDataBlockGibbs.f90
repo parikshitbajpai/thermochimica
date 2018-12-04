@@ -67,7 +67,7 @@
     ! iSpeciesAtomsCS                   Integer matrix representing the number of atoms of a particular elements
     !                                    in a species (i.e., stoichiometry matrix) from the data-file.
     ! iDummy                            An integer scalar dummy variable.
-    ! iDummyCharge                      An integer scalar dummy variable to store the total charge on an aqueous
+    ! dDummyCharge                      A double scalar dummy variable to store the total charge on an aqueous
     !                                    species.
     ! cSpeciesNameCS                    A character vector representing the name of a species from the data-file.
     ! dGibbsCoeffSpeciesTemp            Temporary double array of coefficients for a Gibbs energy equation.
@@ -84,8 +84,8 @@ subroutine ParseCSDataBlockGibbs(i,j,iCounterGibbsEqn)
 
     implicit none
 
-    integer               :: i, j, k, l, m, iDummy, iDummyCharge, iCounterGibbsEqn, iGibbsEqType
-    real(8)               :: dTemp
+    integer               :: i, j, k, l, m, iDummy, iCounterGibbsEqn, iGibbsEqType
+    real(8)               :: dTemp, dDummyCharge
     real(8),dimension(15) :: dTempVec
     real(8),parameter     :: dGibbsDummy = 1D6
     character(5)          :: cDummy
@@ -139,12 +139,16 @@ subroutine ParseCSDataBlockGibbs(i,j,iCounterGibbsEqn)
 
     ! Entry 4: Read thermodynamic data for constituent species:
     k = MIN(nElementsCS,10)
-    if (cSolnPhaseTypeCS(i) == 'IDWZ') then
-       read (1,*, IOSTAT = INFO) iGibbsEqType, iDummyCharge, nGibbsEqSpecies(j), dTempVec(1:k)
+    if (i > 0) then
+      if (cSolnPhaseTypeCS(i) == 'IDWZ') then
+        read (1,*, IOSTAT = INFO) iGibbsEqType, nGibbsEqSpecies(j), dDummyCharge, dTempVec(1:k)
+      else
+        read (1,*, IOSTAT = INFO) iGibbsEqType, nGibbsEqSpecies(j), dTempVec(1:k)
+      end if
     else
        read (1,*, IOSTAT = INFO) iGibbsEqType, nGibbsEqSpecies(j), dTempVec(1:k)
     end if
-            
+
     if ((iGibbsEqType == 4).OR.(iGibbsEqType == 16).OR.(iGibbsEqType == 1)) then
         ! Placeholder: do nothing.
     else
@@ -256,7 +260,7 @@ subroutine ParseCSDataBlockGibbs(i,j,iCounterGibbsEqn)
     if (iPhaseCS(j) == -1) then
         dGibbsCoeffSpeciesTemp(2,iCounterGibbsEqn) = dGibbsDummy
      end if
- 
+
     return
 
 end subroutine ParseCSDataBlockGibbs
