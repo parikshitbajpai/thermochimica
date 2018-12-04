@@ -76,7 +76,18 @@ subroutine CompExcessGibbsEnergy(iSolnIndex)
                 dChemicalPotential(i)       = dStdGibbsEnergy(i) + DLOG(dMolFraction(i))
                 dGibbsSolnPhase(iSolnIndex) = dGibbsSolnPhase(iSolnIndex) + dChemicalPotential(i) * dMolesSpecies(i) 
             end do
-    
+
+        case ('IDWZ')
+
+            ! Compute the 'excess' terms for a Aqueous solution (IDWZ) model:
+            call CompExcessGibbsEnergyIDWZ(iSolnIndex)
+             
+            ! Compute the chemical potentials of each species and the molar Gibbs energy of the phase:
+            do i = iFirst, iLast
+                dChemicalPotential(i)       = dStdGibbsEnergy(i) + DLOG(dMolFraction(i)) + dPartialExcessGibbs(i)
+                dGibbsSolnPhase(iSolnIndex) = dGibbsSolnPhase(iSolnIndex) + dChemicalPotential(i) * dMolesSpecies(i) 
+            end do
+                 
         case ('QKTO')    
                         
             ! Compute the excess terms for a Quasichemical Kohler-TOop (QKTO) model:

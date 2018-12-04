@@ -62,7 +62,7 @@
     !> \param       dTolerance          A double real vector representing numerical tolerances (defined in 
     !!                                   InitThermo.f90).
     !> \param       cElementName        A character vector representing the name of each element in the system.
-    !> \param       cSpeciesName   A character vector representing the name of each species in short-form.
+    !> \param       cSpeciesName        A character vector representing the name of each species in short-form.
     !> \param       cSolnPhaseName      A character vector representing the name of each solution phase.
     !> \param       cSolnPhaseType      A character vector representing the type of each solution phase.
     !> \param       nChargedPhase       An integer scalar representing the number of charged phases (e.g., the
@@ -99,7 +99,7 @@ module ModuleThermo
     real(8),       dimension(:),   allocatable::  dChemicalPotential, dExcessGibbsParam, dLevel, dSpeciesTotalAtoms
     real(8),       dimension(:),   allocatable::  dElementPotential, dMolesPhase, dMolesElement, dMolFraction
     real(8),       dimension(:,:), allocatable::  dAtomFractionSpecies, dStoichSublattice, dStoichSpecies
-    real(8),       dimension(:,:), allocatable:: dCoeffGibbsMagnetic, dCoordinationNumber
+    real(8),       dimension(:,:), allocatable::  dCoeffGibbsMagnetic, dCoordinationNumber
 
     real(8),      dimension(:,:,:),allocatable::  dSiteFraction
  

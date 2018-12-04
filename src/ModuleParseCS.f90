@@ -87,7 +87,8 @@ module ModuleParseCS
     character(8),   dimension(:,:,:), allocatable :: cConstituentNameSUBCS
     
     character(8),   dimension(nSolnTypeSupport), parameter :: cSolnPhaseTypeSupport = &
-                                                    ['IDMX    ','QKTO    ','SUBL    ','RKMP    ','RKMPM   ','SUBLM   ','SUBG    ','IDWZ    ']
+         ['IDMX    ','QKTO    ','SUBL    ','RKMP    ','RKMPM   ','SUBLM   ','SUBG    ',&
+    'IDWZ    ']
         
         
 end module ModuleParseCS
