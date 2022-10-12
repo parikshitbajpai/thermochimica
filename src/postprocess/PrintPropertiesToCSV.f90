@@ -21,7 +21,7 @@ subroutine PrintPropertiesToCSV
         open(1, file='/Users/parikshitbajpai/projects/thermochimica/thermoout.txt', status='old', position='append', action='write')
       else
         open(1, file='/Users/parikshitbajpai/projects/thermochimica/thermoout.txt', status='new', action='write')
-        write(1,*) 'T [K],P [atm],x_Ni [mol],x_F [mol],x_Li [mol],mu_Ni [J/mol],mu_F [J/mol],mu_Li [J/mol],G [J]'
+        write(1,*) 'T [K],P [atm],x_Cs [mol],x_Na [mol],x_F [mol]'
       end if
 
       if ((dPressure < 1D3).AND.(dPressure > 1D-1)) then
@@ -30,7 +30,7 @@ subroutine PrintPropertiesToCSV
           write(1,'(F11.2,A1,ES11.3,A1)',advance="no") dTemperature, ',', dPressure, ','
       end if
       do i = 1, nElements
-          write(1,'(ES20.12,A1)',advance="no") dMolesElement(i), ','
+          write(1,'(ES15.4,A1)',advance="no") dMolesElement(i), ','
       end do
       do i = 1, nElements
           write(1,'(ES20.12,A1)',advance="no") dElementPotential(i) * dIdealConstant * dTemperature, ','

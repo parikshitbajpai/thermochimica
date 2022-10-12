@@ -335,6 +335,7 @@ program RunCalculationList
       end do
       call Thermochimica
       call PrintResults
+      ! call PrintPropertiesToCSV
       if (iPrintResultsMode > 0) call ThermoDebug
       open(2, file= DATA_DIRECTORY // '../thermoout.json', &
           status='OLD', position='append', action='write')
