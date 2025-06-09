@@ -173,15 +173,6 @@ program RunCalculationList
             return
           endif
           lMassUnit = .TRUE.
-        case('output')
-          read(cValue,'(A)',IOSTAT = INFO) cOutputFilePath
-          if(INFO /= 0) then
-            INFOThermo = 54
-            write(cErrMsg,'(A35,I10)') 'Cannot read output file on line', iCounter
-            print *, trim(cErrMsg)
-            return
-          endif
-          cOutputFilePath = cOutputFilePathTemp
         case ('data','Data','data_file','Data_file','data file','Data file','Data File',&
           'dat','Dat','dat_file','Dat_file','dat file','Dat file','Dat File')
           read(cValue,'(A)',IOSTAT = INFO) cThermoFileNameTemp
@@ -291,6 +282,16 @@ program RunCalculationList
             print *,  trim(cErrMsg)
             return
           end if
+        case('json','JSON','json_file','JSON_file','json file','JSON file','Json File',&
+          'Json_file','Json','output file','Output File','output','Output')
+          read(cValue,'(A)',IOSTAT = INFO) cOutputFilePathTemp
+          if(INFO /= 0) then
+            INFOThermo = 54
+            write(cErrMsg,'(A35,I10)') 'Cannot read output file on line', iCounter
+            print *, trim(cErrMsg)
+            return
+          endif
+          cOutputFilePath = cOutputFilePathTemp
         case ('fuzzy','fuzzy stoichiometry','fuzzystoichiometry','fuzzy_stoichiometry',&
           'Fuzzy','Fuzzy Stoichiometry','FuzzyStoichiometry','Fuzzy_Stoichiometry',&
           'lFuzzyStoich','fuzz','Fuzz','fuzzy stoich')
@@ -357,7 +358,7 @@ program RunCalculationList
 
     ! Specify values:
     if (lWriteJSON) then
-        OPEN(2, file= DATA_DIRECTORY // cOutputFilePath, &
+        OPEN(2, file= DATA_DIRECTORY // '../outputs/' // trim(cOutputFilePath) // '.json', &
             status='REPLACE', action='write')
         WRITE(2,*) '{'
         CLOSE(2)
@@ -375,7 +376,7 @@ program RunCalculationList
       call Thermochimica
       call PrintResults
       if (iPrintResultsMode > 0) call ThermoDebug
-      open(2, file= DATA_DIRECTORY // cOutputFilePath, &
+      open(2, file= DATA_DIRECTORY // '../outputs/' // trim(cOutputFilePath) // '.json', &
           status='OLD', position='append', action='write')
       if (i > 1) write(2,*) ','
       write(intStr,*) i
@@ -396,7 +397,7 @@ program RunCalculationList
     CLOSE(3)
 
     if (lWriteJSON) then
-        open(2, file= DATA_DIRECTORY // cOutputFilePath, &
+        open(2, file= DATA_DIRECTORY // '../outputs/' // trim(cOutputFilePath) // '.json', &
             status='OLD', position='append', action='write')
         write(2,*) '}'
         close (2)

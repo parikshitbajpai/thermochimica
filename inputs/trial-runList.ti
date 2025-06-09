@@ -2,7 +2,8 @@
 temperature unit  = K
 pressure unit     = atm
 mass unit         = moles
-data file         = data/C-O.dat
+data file         = data/CO.dat
+json              = output
 
 ! Specify output and debug modes:
 print mode        = 2
