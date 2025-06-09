@@ -12,7 +12,7 @@ program RunCalculationList
     real(8), dimension(:), allocatable :: dEls
     character(:), allocatable :: cLine, cErrMsg, cTag, cValue, cElementNumber
     integer :: iDelimiterPosition, iOpenPosition, iClosePosition, iElementNumber, iEqualPosition
-    character(1024) :: cLineInit, cThermoFileNameTemp
+    character(1024) :: cLineInit, cThermoFileNameTemp, cOutputFilePathTemp
     logical :: lEnd, lPressureUnit, lTemperatureUnit, lMassUnit, lData, lEl, lNel
     character(15) :: cRunUnitTemperature, cRunUnitPressure, cRunUnitMass
 
@@ -173,6 +173,15 @@ program RunCalculationList
             return
           endif
           lMassUnit = .TRUE.
+        case('output')
+          read(cValue,'(A)',IOSTAT = INFO) cOutputFilePath
+          if(INFO /= 0) then
+            INFOThermo = 54
+            write(cErrMsg,'(A35,I10)') 'Cannot read output file on line', iCounter
+            print *, trim(cErrMsg)
+            return
+          endif
+          cOutputFilePath = cOutputFilePathTemp
         case ('data','Data','data_file','Data_file','data file','Data file','Data File',&
           'dat','Dat','dat_file','Dat_file','dat file','Dat file','Dat File')
           read(cValue,'(A)',IOSTAT = INFO) cThermoFileNameTemp
@@ -348,7 +357,7 @@ program RunCalculationList
 
     ! Specify values:
     if (lWriteJSON) then
-        OPEN(2, file= DATA_DIRECTORY // '../outputs/thermoout.json', &
+        OPEN(2, file= DATA_DIRECTORY // cOutputFilePath, &
             status='REPLACE', action='write')
         WRITE(2,*) '{'
         CLOSE(2)
@@ -366,7 +375,7 @@ program RunCalculationList
       call Thermochimica
       call PrintResults
       if (iPrintResultsMode > 0) call ThermoDebug
-      open(2, file= DATA_DIRECTORY // '../outputs/thermoout.json', &
+      open(2, file= DATA_DIRECTORY // cOutputFilePath, &
           status='OLD', position='append', action='write')
       if (i > 1) write(2,*) ','
       write(intStr,*) i
@@ -387,7 +396,7 @@ program RunCalculationList
     CLOSE(3)
 
     if (lWriteJSON) then
-        open(2, file= DATA_DIRECTORY // '../outputs/thermoout.json', &
+        open(2, file= DATA_DIRECTORY // cOutputFilePath, &
             status='OLD', position='append', action='write')
         write(2,*) '}'
         close (2)
