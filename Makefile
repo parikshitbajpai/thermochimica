@@ -1,241 +1,311 @@
 #####################################################################################
-##										    ##
-##	Makefile for Thermochimica						    ##
-##										    ##
-##	Base Makefile written by M. Rodriguez Rodriguez and M.H.A. Piro	            ##
-##	Modified S. Simunovic
-##	make		- compile shared libraries				    ##
-##      make test 	- compile all tests					    ##
-##	make dailytest 	- compile application and unit tests that run daily	    ##
-##	make weeklytest - compile application and unit tests that run weekly	    ##
-##	make doc	- compile dOxygen HTML and LaTex documents	            ##
-##      make docHTML    - compile dOxygen HTML document only 			    ##
-##	make doclatex	- compile dOxygen LaTeX document only	 	            ##
-##	make clean	- clean object files					    ##
-##      make cleandoc   - clean dOxygen files					    ##
-##	make veryclean  - clean object, executable, module and document files.	    ##
-##										    ##
-######################################################################################
+## Thermochimica Makefile (Fortran 95+ core, C/C++ API, tests & docs)
+## - Auto source discovery (no manual lists)
+## - Correct Fortran module ordering via stamp
+## - FC normalization (no accidental f77)
+## - macOS/Linux BLAS/LAPACK selection (overridable)
+#####################################################################################
 
-## ===================
-## COMPILER VARIABLES:
-## ===================
-AR          = ar
-FC          = gfortran
-CC          = g++
-FFPE_TRAPS  ?= zero
-FCFLAGS     = -Wall -O2 -ffree-line-length-none -fno-automatic -fbounds-check -ffpe-trap=$(FFPE_TRAPS) -cpp -D"DATA_DIRECTORY='$(DATA_DIR)'"
-CCFLAGS     = -std=gnu++17
+# ====== Toolchain (overridable) ====================================================
+AR      ?= ar
+RANLIB  ?= ranlib
+FC      ?= gfortran
+CXX     ?= g++
+CC      ?= gcc
 
+# --- Beat GNU Make's built-in FC=f77 default & any accidental f77 in env
+ifeq ($(origin FC), default)
+  override FC := gfortran
+endif
+ifneq (,$(findstring f77,$(notdir $(FC))))
+  ifeq ($(ALLOW_F77),)
+    $(info FC is '$(FC)'; forcing gfortran for .f90 sources. Set ALLOW_F77=1 to keep it.)
+    override FC := gfortran
+  endif
+endif
+override F77 := $(FC)
+override F90 := $(FC)
+override F95 := $(FC)
+
+# ====== Layout =====================================================================
+CURDIR    := $(shell pwd)
+SRC_DIR   := src
+EXE_DIR   := $(SRC_DIR)/exec
+TST_DIR   := test
+DTST_DIR  := $(TST_DIR)/daily
+OBJ_DIR   := obj
+BIN_DIR   := bin
+LIB_DIR   := lib
+DOC_DIR   := doc
+TEX_DIR   := $(DOC_DIR)/latex
+
+# ====== Config =====================================================================
+DATA_DIR     ?= $(CURDIR)/data
+FFPE_TRAPS   ?= zero
+MODE         ?= release
+
+COMMON_FCFLAGS  = -ffree-line-length-none -fno-automatic -fbounds-check -cpp \
+                  -D DATA_DIRECTORY=\"$(DATA_DIR)\" -I$(OBJ_DIR) -J$(OBJ_DIR)
+COMMON_CXXFLAGS = -std=gnu++17
+COMMON_CFLAGS   =
+
+ifeq ($(MODE),debug)
+  FCFLAGS  ?= -Wall -O0 -g -ffpe-trap=$(FFPE_TRAPS) $(COMMON_FCFLAGS)
+  CXXFLAGS ?= -O0 -g $(COMMON_CXXFLAGS)
+  CFLAGS   ?= -O0 -g $(COMMON_CFLAGS)
+else
+  FCFLAGS  ?= -Wall -O2 -ffpe-trap=$(FFPE_TRAPS) $(COMMON_FCFLAGS)
+  CXXFLAGS ?= -O2 $(COMMON_CXXFLAGS)
+  CFLAGS   ?= -O2 $(COMMON_CFLAGS)
+endif
+
+# ====== BLAS/LAPACK & link flags ===================================================
 UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-    # links to lapack and blas libraries:
-    LDLOC   = -L/usr/lib/lapack -llapack -L/usr/lib/libblas -lblas -lgfortran
-    # link flags for linux users:
-    LDFLAGS = -O2 -fno-automatic -fbounds-check
+
+ifdef BLASLAPACK
+  LDLIBS_BLAS := $(BLASLAPACK)
+else
+  HAVE_PKGCONF := $(shell sh -c 'command -v pkg-config >/dev/null 2>&1 && echo yes || echo no')
+  ifeq ($(HAVE_PKGCONF),yes)
+    LDLIBS_BLAS := $(shell pkg-config --libs lapack 2>/dev/null || true)
+  endif
+  ifeq ($(strip $(LDLIBS_BLAS)),)
+    ifeq ($(UNAME_S),Darwin)
+      LDLIBS_BLAS := -framework Accelerate
+    else
+      LDLIBS_BLAS := -llapack -lblas
+    endif
+  endif
 endif
+
 ifeq ($(UNAME_S),Darwin)
-    # link flags for mac users:
-    LDFLAGS = -O2 -framework Accelerate -fno-automatic -fbounds-check
-endif
-ifneq (,$(findstring NT,$(UNAME_S)))
-    LDLOC   =  -llapack -lblas -lgfortran
-    # link flags for Windows users:
-    LDFLAGS = -O2 -fno-automatic -fbounds-check
+  LDFLAGS ?=
+  LDLIBS  ?= $(LDLIBS_BLAS)
+else
+  LDFLAGS ?=
+  LDLIBS  ?= $(LDLIBS_BLAS) -lgfortran
 endif
 
-## ====================
-## DIRECTORY VARIABLES:
-## ====================
-MKDIR_P     = mkdir -p
-DOC_DIR     = doc
-TEX_DIR     = $(DOC_DIR)/latex
-BIN_DIR     = bin
-OBJ_DIR     = obj
-SRC_DIR     = src
-SRC_SDR     = debug gem module parser postprocess reinit reset setup ctz api
-EXE_DIR     = $(SRC_DIR)/exec
-TST_DIR     = test
-LIB_DIR     = lib
-DTST_DIR    = $(TST_DIR)/daily
-SHARED_DIR  = $(SRC_DIR)
-SHARED_DIR += $(addprefix $(SRC_DIR)/,$(SRC_SDR))
-CURR_DIR    = $(shell pwd)
-DATA_DIR    = $(CURR_DIR)/data/
-VPATH		= $(SHARED_DIR)
+# ====== Libraries ==================================================================
+TC_LIB    := libthermochimica.a
+TC_C_LIB  := libthermoc.a
 
-# Separate modules and non-modules
-modfiles := $(shell find src -name "Module*.f90")
-srcfiles := $(shell find src -iname "*.f90" -and -not -name "Module*")
+# ====== Source discovery ===========================================================
+# Core Fortran for the library (exclude executables & tests)
+CORE_F90_SRCS := $(shell find $(SRC_DIR) -type f \
+                  -not -path "$(EXE_DIR)/*" -not -path "$(TST_DIR)/*" \
+                  \( -iname '*.f90' -o -iname '*.F90' \))
 
-##
-OBJ_FILES			=  $(addprefix $(OBJ_DIR)/,$(patsubst %.f90, %.o, $(patsubst %.F90, %.o, $(notdir $(srcfiles)))))
+# Split modules vs non-modules (case-insensitive Module*.f90/F90)
+MOD_SRCS  := $(filter %/Module%.f90 %/Module%.F90,$(CORE_F90_SRCS))
+F90_NMOD  := $(filter-out $(MOD_SRCS),$(CORE_F90_SRCS))
 
-## ========
-## MODULES:
-## ========
-MODS_OBJ    = $(patsubst %.f90, %.o, $(notdir $(modfiles)))
-MODS_LNK    = $(addprefix $(OBJ_DIR)/,$(MODS_OBJ))
+# Map to obj/… and normalize extensions
+F90_MOD_OBJS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(MOD_SRCS))
+F90_MOD_OBJS := $(F90_MOD_OBJS:.f90=.o)
+F90_MOD_OBJS := $(F90_MOD_OBJS:.F90=.o)
 
-## =================
-## LIBRARIES:
-## =================
-TC_LIB      = libthermochimica.a
-SHARED_SRC  = $(foreach dir,$(SHARED_DIR),$(notdir $(wildcard $(dir)/*.f90)))
-SHARED_SRCF = $(foreach dir,$(SHARED_DIR),$(notdir $(wildcard $(dir)/*.F90)))
-SHARED_OBJ  = $(SHARED_SRC:.f90=.o)
-SHARED_OBJ += $(SHARED_SRCF:.F90=.o)
-SHARED_LNK  = $(addprefix $(OBJ_DIR)/,$(SHARED_OBJ))
-SHARED_LIB  = $(OBJ_DIR)/$(TC_LIB)
+F90_OBJS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(F90_NMOD))
+F90_OBJS := $(F90_OBJS:.f90=.o)
+F90_OBJS := $(F90_OBJS:.F90=.o)
 
-## =================
-## C interface library:
-## =================
-C_SRC       = Thermochimica-c.C Thermochimica-cxx.C
-C_OBJ       = $(C_SRC:.C=.o)
-C_LNK       = $(addprefix $(OBJ_DIR)/,$(C_OBJ))
-TC-C_LIB    = libthermoc.a
-C_LIB  			= $(OBJ_DIR)/$(TC-C_LIB)
+# C / C++ in src/ (exclude exec & tests) — used for the C/C++ API lib if present
+C_SRCS    := $(shell find $(SRC_DIR) -type f -not -path "$(EXE_DIR)/*" -not -path "$(TST_DIR)/*" -iname '*.c')
+CXX_SRCS  := $(shell find $(SRC_DIR) -type f -not -path "$(EXE_DIR)/*" -not -path "$(TST_DIR)/*" \
+                \( -iname '*.C' -o -iname '*.cc' -o -iname '*.cpp' -o -iname '*.cxx' \))
 
-## ============
-## OLD EXECUTABLES:
-## ============
-EXEC_SRC    = $(notdir $(wildcard $(TST_DIR)/*.F90))
-EXEC_SRC   += $(notdir $(wildcard $(EXE_DIR)/*.F90))
-EXEC_OBJ    = $(EXEC_SRC:.F90=.o)
-EXEC_LNK    = $(addprefix $(OBJ_DIR)/,$(EXEC_OBJ))
-EXE_OBJ     = $(basename $(EXEC_SRC))
-EXE_BIN     = $(addprefix $(BIN_DIR)/,$(EXE_OBJ))
+C_OBJS    := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(C_SRCS:.c=.o))
+CXX_OBJS  := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(CXX_SRCS))
+CXX_OBJS  := $(CXX_OBJS:.C=.o)
+CXX_OBJS  := $(CXX_OBJS:.cc=.o)
+CXX_OBJS  := $(CXX_OBJS:.cpp=.o)
+CXX_OBJS  := $(CXX_OBJS:.cxx=.o)
 
-## ============
-## DAILY TESTS:
-## ============
-DTEST_SRC   = $(notdir $(wildcard $(DTST_DIR)/*.F90))
-DTEST_OBJ   = $(DTEST_SRC:.F90=.o)
-DTEST_LNK   = $(addprefix $(OBJ_DIR)/,$(DTEST_OBJ))
-DTST_OBJ    = $(basename $(DTEST_SRC))
-DTST_BIN    = $(addprefix $(BIN_DIR)/,$(DTST_OBJ))
+# Prefer the named C API files if present
+C_API_SRCS := $(shell find $(SRC_DIR) -type f \( -iname 'Thermochimica-c.*' -o -iname 'Thermochimica-cxx.*' \))
+ifeq ($(strip $(C_API_SRCS)),)
+  C_API_OBJS := $(C_OBJS) $(CXX_OBJS)
+else
+  C_API_OBJS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(C_API_SRCS))
+  C_API_OBJS := $(C_API_OBJS:.c=.o)
+  C_API_OBJS := $(C_API_OBJS:.C=.o)
+  C_API_OBJS := $(C_API_OBJS:.cc=.o)
+  C_API_OBJS := $(C_API_OBJS:.cpp=.o)
+  C_API_OBJS := $(C_API_OBJS:.cxx=.o)
+endif
 
-## =======
-## COMPILE
-## =======
-all:  directories $(MODS_LNK) $(SHARED_LNK) $(SHARED_LIB) $(EXEC_LNK) $(EXE_BIN) $(C_LNK) $(C_LIB)
+# Executable/test mains
+EXEC_SRCS  := $(shell find $(EXE_DIR) -type f \( -iname '*.f90' -o -iname '*.F90' \))
+TEST_SRCS  := $(shell find $(TST_DIR) -maxdepth 1 -type f \( -iname '*.f90' -o -iname '*.F90' \))
+DTEST_SRCS := $(shell find $(DTST_DIR) -type f \( -iname '*.f90' -o -iname '*.F90' \))
 
-directories: ${OBJ_DIR} ${BIN_DIR}
+EXEC_OBJS  := $(patsubst $(EXE_DIR)/%,$(OBJ_DIR)/%,$(EXEC_SRCS))
+EXEC_OBJS  := $(EXEC_OBJS:.f90=.o)
+EXEC_OBJS  := $(EXEC_OBJS:.F90=.o)
 
-${OBJ_DIR}:
-	${MKDIR_P} ${OBJ_DIR}
+TEST_OBJS  := $(patsubst $(TST_DIR)/%,$(OBJ_DIR)/%,$(TEST_SRCS))
+TEST_OBJS  := $(TEST_OBJS:.f90=.o)
+TEST_OBJS  := $(TEST_OBJS:.F90=.o)
 
-${BIN_DIR}:
-	${MKDIR_P} ${BIN_DIR}
+DTEST_OBJS := $(patsubst $(DTST_DIR)/%,$(OBJ_DIR)/%,$(DTEST_SRCS))
+DTEST_OBJS := $(DTEST_OBJS:.f90=.o)
+DTEST_OBJS := $(DTEST_OBJS:.F90=.o)
 
-# Enforce module dependency rules
-$(OBJ_FILES): $(srcfiles) $(MODS_LNK)
-$(EXEC_LNK) $(DTST_LNK): $(MODS_LNK)
+EXEC_BINS  := $(patsubst $(OBJ_DIR)/%.o,$(BIN_DIR)/%,$(EXEC_OBJS))
+TEST_BINS  := $(patsubst $(OBJ_DIR)/%.o,$(BIN_DIR)/%,$(TEST_OBJS))
+DTEST_BINS := $(patsubst $(OBJ_DIR)/%.o,$(BIN_DIR)/%,$(DTEST_OBJS))
 
-$(OBJ_DIR)/%.o: %.f90 $(OBJ_DIR)
-	$(FC) -I$(OBJ_DIR) -J$(OBJ_DIR) $(FCFLAGS) -c $< -o $@
+# ====== Default targets ============================================================
+.PHONY: all libs exe dailytest test debug release help
+all: libs exe
+libs: $(LIB_DIR)/$(TC_LIB) $(if $(C_API_OBJS),$(LIB_DIR)/$(TC_C_LIB),)
+exe:  $(EXEC_BINS) $(TEST_BINS)
+dailytest: $(DTEST_BINS)
+test: all dailytest
+debug: ; @$(MAKE) MODE=debug
+release: ; @$(MAKE) MODE=release
+help:
+	@echo "Targets:"
+	@echo "  all (default)  - build libs and executables"
+	@echo "  libs           - build static libraries"
+	@echo "  exe            - build executables in $(EXE_DIR) and $(TST_DIR)"
+	@echo "  dailytest      - build executables in $(DTST_DIR)"
+	@echo "  test           - all + dailytest"
+	@echo "  debug/release  - switch build mode"
+	@echo "  install        - install libs and .mod (PREFIX=$(PREFIX))"
+	@echo "  doc            - Doxygen HTML + LaTeX"
+	@echo "  clean/veryclean"
 
-$(OBJ_DIR)/%.o: %.F90 $(OBJ_DIR)
-	$(FC) -I$(OBJ_DIR) -J$(OBJ_DIR) $(FCFLAGS) -c $< -o $@
+# ====== Module ordering: build modules once, then everything else ==================
+$(OBJ_DIR):
+	@mkdir -p $(OBJ_DIR)
 
-$(OBJ_DIR)/%.o: $(TST_DIR)/%.F90 $(OBJ_DIR)
-	$(FC) -I$(OBJ_DIR) -J$(OBJ_DIR) $(FCFLAGS) -c $< -o $@
+# Build all module objects before any non-module or main program compiles
+$(OBJ_DIR)/.mods.stamp: $(F90_MOD_OBJS) | $(OBJ_DIR)
+	@touch $@
 
-$(OBJ_DIR)/%.o: $(EXE_DIR)/%.F90 $(OBJ_DIR)
-	$(FC) -I$(OBJ_DIR) -J$(OBJ_DIR) $(FCFLAGS) -c $< -o $@
+# Core non-module Fortran objects must wait for modules
+$(F90_OBJS): | $(OBJ_DIR)/.mods.stamp
+# Executable/test objects must also wait for modules
+$(EXEC_OBJS): | $(OBJ_DIR)/.mods.stamp
+$(TEST_OBJS): | $(OBJ_DIR)/.mods.stamp
+$(DTEST_OBJS): | $(OBJ_DIR)/.mods.stamp
 
-$(SHARED_LIB): $(SHARED_LNK)
+# ====== Archives ===================================================================
+$(LIB_DIR)/$(TC_LIB): $(F90_MOD_OBJS) $(F90_OBJS)
+	@mkdir -p $(LIB_DIR)
 	$(AR) rcs $@ $^
+	@$(RANLIB) $@ || true
 
+$(LIB_DIR)/$(TC_C_LIB): $(C_API_OBJS)
+	@mkdir -p $(LIB_DIR)
+	$(AR) rcs $@ $^
+	@$(RANLIB) $@ || true
+
+# ====== Link executables ===========================================================
+$(BIN_DIR)/%: $(OBJ_DIR)/%.o $(LIB_DIR)/$(TC_LIB)
+	@mkdir -p $(@D)
+	$(FC) $(FCFLAGS) $(LDFLAGS) -o $@ $< $(LIB_DIR)/$(TC_LIB) $(LDLIBS)
+
+# ====== Compile rules (core sources) ==============================================
+# Fortran core
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.f90
+	@mkdir -p $(@D)
+	$(FC) $(FCFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.F90
+	@mkdir -p $(@D)
+	$(FC) $(FCFLAGS) -c $< -o $@
+
+# C / C++
+DEPFLAGS = -MMD -MP
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) $(CCFLAGS) -c $< -o $@
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.C
-	$(CC) $(CCFLAGS) -c $< -o $@
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 
-$(C_LIB): $(C_LNK)
-	$(AR) rcs $@ $^
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 
-$(BIN_DIR)/%: $(OBJ_DIR)/%.o $(SHARED_LNK)
-	$(FC) -I$(OBJ_DIR) -J$(OBJ_DIR) $(FCFLAGS) $(LDFLAGS) -o $(BIN_DIR)/$* $< $(SHARED_LNK) $(LDLOC)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 
-.PHONY: clean veryclean test doc cleandoc directories
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cxx
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< -o $@
 
-## =====
-## CLEAN
-## =====
+# ====== Compile rules (exec/tests — depend on modules) ============================
+$(OBJ_DIR)/%.o: $(EXE_DIR)/%.f90 | $(OBJ_DIR)/.mods.stamp
+	@mkdir -p $(@D)
+	$(FC) $(FCFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(EXE_DIR)/%.F90 | $(OBJ_DIR)/.mods.stamp
+	@mkdir -p $(@D)
+	$(FC) $(FCFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)/.mods.stamp
+	@mkdir -p $(@D)
+	$(FC) $(FCFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(TST_DIR)/%.F90 | $(OBJ_DIR)/.mods.stamp
+	@mkdir -p $(@D)
+	$(FC) $(FCFLAGS) -c $< -o $@
+
+# ====== Cleaning ===================================================================
+.PHONY: clean veryclean
 clean:
-	rm -f $(OBJ_DIR)/*
-	find bin -name \*.dSYM -exec rm -rf {} \; > /dev/null 2>&1 | :
-	rm -f $(BIN_DIR)/*
+	-@rm -f $(OBJ_DIR)/**/*.o $(OBJ_DIR)/**/*.d 2>/dev/null || true
+	-@rm -f $(OBJ_DIR)/*.o $(OBJ_DIR)/*.d $(OBJ_DIR)/.mods.stamp 2>/dev/null || true
+	-@find $(BIN_DIR) -name '*.dSYM' -exec rm -rf {} \; >/dev/null 2>&1 || true
+	-@rm -f $(BIN_DIR)/* 2>/dev/null || true
 
-cleanexternal:
-	rm -f $(SRC_DIR)/*.lo
-	rm -f $(SRC_DIR)/*.lo.d
-	rm -f $(SRC_DIR)/.libs/*
-	rm -f $(SRC_DIR)/*.mod
-	rm -f $(LIB_DIR)/*
-	rm -f $(LIB_DIR)/.libs/*
+veryclean: clean cleandoc
+	-@rm -rf $(OBJ_DIR) $(BIN_DIR) $(LIB_DIR)
+	-@rm -f *.mod
 
-veryclean: clean cleandoc cleanexternal
-	rm -fr $(OBJ_DIR)/*
-	rm -fr $(BIN_DIR)/*
-	rm -f *.mod
+# ====== Install ====================================================================
+PREFIX ?= /usr/local
 
-## =======
-## INSTALL
-## =======
-ifeq ($(PREFIX),)
-  PREFIX := /usr/local
-endif
+.PHONY: install c-thermo libraries
+install: $(LIB_DIR)/$(TC_LIB)
+	install -d $(DESTDIR)$(PREFIX)/lib
+	install -m 644 $(LIB_DIR)/$(TC_LIB) $(DESTDIR)$(PREFIX)/lib/
+	install -d $(DESTDIR)$(PREFIX)/include
+	@find $(OBJ_DIR) -name '*.mod' -exec install -m 644 {} $(DESTDIR)$(PREFIX)/include/ \;
 
-install: $(SHARED_LIB)
-	install -d $(DESTDIR)$(PREFIX)/lib/
-	install -m 644 $(SHARED_LIB) $(DESTDIR)$(PREFIX)/lib/
-	install -d $(DESTDIR)$(PREFIX)/include/
-	install -m 644 $(OBJ_DIR)/*.mod $(DESTDIR)$(PREFIX)/include/
-
-c-thermo: $(C_LIB)
-	install -d $(DESTDIR)$(PREFIX)/lib/
-	install -m 644 $(C_LIB) $(DESTDIR)$(PREFIX)/lib/
+c-thermo: $(LIB_DIR)/$(TC_C_LIB)
+	install -d $(DESTDIR)$(PREFIX)/lib
+	install -m 644 $(LIB_DIR)/$(TC_C_LIB) $(DESTDIR)$(PREFIX)/lib/
 
 libraries: install c-thermo
 
-## =============
-## DOCUMENTATION
-## =============
+# ====== Documentation ==============================================================
+.PHONY: doc dochtml doclatex doctest cleandoc
 doc: dochtml doclatex
 
 dochtml:
 	doxygen Doxyfile
 
 doclatex: dochtml
-	cd $(TEX_DIR); make
+	$$(cd $(TEX_DIR) && $(MAKE))
 
 doctest:
-	cd $(TST_DIR); doxygen Doxyfile; cd $(TEX_DIR); make; cd ../..; mv $(DOC_DIR) ../$(DOC_DIR)/$(TST_DIR)
+	$$(cd $(TST_DIR) && doxygen Doxyfile && cd $(TEX_DIR) && $(MAKE) && cd ../.. && mv $(DOC_DIR) ../$(DOC_DIR)/$(TST_DIR))
 
 cleandoc:
-	rm -r -f $(DOC_DIR)/html; rm -r -f $(TEX_DIR); rm -r -f $(TST_DIR)/$(DOC_DIR)/html; rm -r -f $(TST_DIR)/$(TEX_DIR); rm -r -f $(DOC_DIR)/$(TST_DIR)
+	-@rm -rf $(DOC_DIR)/html $(TEX_DIR) $(TST_DIR)/$(DOC_DIR)/html $(TST_DIR)/$(TEX_DIR) $(DOC_DIR)/$(TST_DIR)
 
-## ===========
-## DAILY TESTS
-## ===========
-dailytest: $(DTEST_LNK) $(SHARED_LNK) $(MODS_LNK) $(DTST_BIN)
-
-$(OBJ_DIR)/%.o: $(DTST_DIR)/%.F90
-	$(FC) -I$(OBJ_DIR) -J$(OBJ_DIR) $(FCFLAGS) -c $< -o $@
-
-## ===========
-## ALL TESTS:
-## ===========
-test: all dailytest
-
-## ===========
-## DEBUG:
-## ===========
-setdebug:
-	$(eval FCFLAGS = -Wall -O0 -g -fno-automatic -fbounds-check -ffpe-trap=$(FFPE_TRAPS) -D"DATA_DIRECTORY='$(DATA_DIR)'")
-
-debug: setdebug all dailytest
+# ====== Diagnostics (optional) =====================================================
+.PHONY: print-scan
+print-scan:
+	@echo "CORE_F90_SRCS: $(words $(CORE_F90_SRCS))"
+	@echo "F90_MOD_OBJS : $(words $(F90_MOD_OBJS))"
+	@echo "F90_OBJS     : $(words $(F90_OBJS))"
+	@echo "EXEC_BINS    : $(words $(EXEC_BINS))"
+	@echo "TEST_BINS    : $(words $(TEST_BINS))"
+	@echo "DTEST_BINS   : $(words $(DTEST_BINS))"
