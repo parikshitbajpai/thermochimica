@@ -545,4 +545,16 @@ namespace Thermochimica
     TCAPI_setMassBalanceTolerance(&tolerance);
   }
 
+  // Phase fraction constraints
+  void addPhaseFractionConstraint(const std::string &phaseName, double fraction)
+  {
+    int info = 0;
+    TCAPI_addPhaseFractionConstraint(phaseName.c_str(), phaseName.length(), &fraction, &info);
+  }
+
+  void clearPhaseConstraints()
+  {
+    TCAPI_clearPhaseConstraints();
+  }
+
 }

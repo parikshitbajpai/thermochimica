@@ -98,4 +98,8 @@ extern "C"
   void TCAPI_setGibbsMinCheck(bool *);
   void TCAPI_setMinMoleFraction(double *);
   void TCAPI_setMassBalanceTolerance(double *);
+
+  // Phase fraction constraints
+  void TCAPI_addPhaseFractionConstraint(const char *, std::size_t, const double *, int *);
+  void TCAPI_clearPhaseConstraints();
 }

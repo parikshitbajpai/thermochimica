@@ -118,4 +118,8 @@ namespace Thermochimica
   void setMinMoleFraction(double min_mole_fraction);
   void setMassBalanceTolerance(double tolerance);
 
+  // Phase fraction constraints
+  void addPhaseFractionConstraint(const std::string &phaseName, double fraction);
+  void clearPhaseConstraints();
+
 }
