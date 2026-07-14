@@ -19,12 +19,17 @@ extern "C"
   void TCAPI_getOutputSolnSpecies(const char *, std::size_t, const char *, std::size_t, double *, double *, int *);
   void TCAPI_getOutputMolSpecies(const char *, std::size_t, double *, double *, int *);
   void TCAPI_getOutputMolSpeciesPhase(const char *, std::size_t, const char *, std::size_t, double *, int *);
+  void TCAPI_getOutputMolSpeciesPhaseByIndex(const int *, const int *, double *, int *);
   void TCAPI_getElementMolesInPhase(const char *, std::size_t, const char *, std::size_t, double *, int *);
+  void TCAPI_getElementMolesInPhaseByIndex(const int *, const int *, double *, int *);
   void TCAPI_getElementMoleFractionInPhase(const char *, std::size_t, const char *, std::size_t, double *, int *);
 
   void TCAPI_getSolnPhaseMol(const char *, std::size_t, double *, int *);
   void TCAPI_getPureConPhaseMol(const char *, std::size_t, double *, int *);
   void TCAPI_getPhaseIndex(const char *, std::size_t, int *, int *);
+  void TCAPI_getPhaseIndexBySystemIndex(const int *, int *, int *);
+  void TCAPI_getPhaseMolesBySystemIndex(const int *, double *, int *);
+  void TCAPI_getElementIndexByAtomicNumber(const int *, int *, int *);
 
   void TCAPI_getOutputSiteFraction(const char *, std::size_t, int *, int *, double *, int *);
   void TCAPI_getSublSiteMol(const char *, std::size_t, int *, int *, double *, int *);

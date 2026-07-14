@@ -317,8 +317,7 @@ namespace Thermochimica
 
   // Data extraction APIs
 
-  std::pair<double, int>
-  getOutputChemPot(const std::string &elementName)
+  std::pair<double, int> getOutputChemPot(const std::string &elementName)
   {
     double chemPot;
     int info;
@@ -326,8 +325,7 @@ namespace Thermochimica
     return {chemPot, info};
   }
 
-  std::tuple<double, double, int>
-  getOutputSolnSpecies(const std::string &phaseName, const std::string &speciesName)
+  std::tuple<double, double, int> getOutputSolnSpecies(const std::string &phaseName, const std::string &speciesName)
   {
     double moleFrac, chemPot;
     int info;
@@ -335,8 +333,7 @@ namespace Thermochimica
     return std::make_tuple(moleFrac, chemPot, info);
   }
 
-  std::tuple<double, double, int>
-  getOutputMolSpecies(const std::string &speciesName)
+  std::tuple<double, double, int> getOutputMolSpecies(const std::string &speciesName)
   {
     double moleFrac, moles;
     int info;
@@ -344,8 +341,7 @@ namespace Thermochimica
     return std::make_tuple(moleFrac, moles, info);
   }
 
-  std::pair<double, int>
-  getOutputMolSpeciesPhase(const std::string &phaseName, const std::string &speciesName)
+  std::pair<double, int> getOutputMolSpeciesPhase(const std::string &phaseName, const std::string &speciesName)
   {
     double moleFrac;
     int info;
@@ -353,8 +349,17 @@ namespace Thermochimica
     return {moleFrac, info};
   }
 
-  std::pair<double, int>
-  getElementMolesInPhase(const std::string &elementName, const std::string &phaseName)
+  std::pair<double, int> getOutputMolSpeciesPhase(int phaseSystemIndex, int speciesPhaseIndex)
+  {
+    double moleFrac;
+    int info;
+    auto fortran_phase_index = phaseSystemIndex + 1;
+    auto fortran_species_index = speciesPhaseIndex + 1;
+    TCAPI_getOutputMolSpeciesPhaseByIndex(&fortran_phase_index, &fortran_species_index, &moleFrac, &info);
+    return {moleFrac, info};
+  }
+
+  std::pair<double, int> getElementMolesInPhase(const std::string &elementName, const std::string &phaseName)
   {
     double molesElement;
     int info;
@@ -362,8 +367,17 @@ namespace Thermochimica
     return {molesElement, info};
   }
 
-  std::pair<double, int>
-  getElementMoleFractionInPhase(const std::string &elementName, const std::string &phaseName)
+  std::pair<double, int> getElementMolesInPhase(int elementSystemIndex, int phaseSystemIndex)
+  {
+    double molesElement;
+    int info;
+    auto fortran_element_index = elementSystemIndex + 1;
+    auto fortran_phase_index = phaseSystemIndex + 1;
+    TCAPI_getElementMolesInPhaseByIndex(&fortran_element_index, &fortran_phase_index, &molesElement, &info);
+    return {molesElement, info};
+  }
+
+  std::pair<double, int> getElementMoleFractionInPhase(const std::string &elementName, const std::string &phaseName)
   {
     double moleFracElement;
     int info;
@@ -371,8 +385,7 @@ namespace Thermochimica
     return {moleFracElement, info};
   }
 
-  std::pair<double, int>
-  getSolnPhaseMol(const std::string &phaseName)
+  std::pair<double, int> getSolnPhaseMol(const std::string &phaseName)
   {
     double molesPhase;
     int info;
@@ -380,8 +393,7 @@ namespace Thermochimica
     return {molesPhase, info};
   }
 
-  std::pair<double, int>
-  getPureConPhaseMol(const std::string &phaseName)
+  std::pair<double, int> getPureConPhaseMol(const std::string &phaseName)
   {
     double molesPhase;
     int info;
@@ -389,16 +401,47 @@ namespace Thermochimica
     return {molesPhase, info};
   }
 
-  std::pair<int, int>
-  getPhaseIndex(const std::string &phaseName)
+  std::pair<int, int> getPhaseIndex(const std::string &phaseName)
   {
     int index, info;
     TCAPI_getPhaseIndex(phaseName.c_str(), phaseName.length(), &index, &info);
     return {index, info};
   }
 
-  std::pair<double, int>
-  getOutputSiteFraction(const std::string &phaseName, int sublattice, int constituent)
+  std::pair<int, int> getPhaseIndex(int phaseSystemIndex)
+  {
+    int index, info;
+    auto fortran_index = phaseSystemIndex + 1;
+    TCAPI_getPhaseIndexBySystemIndex(&fortran_index, &index, &info);
+    return {index, info};
+  }
+
+  std::pair<double, int> getPhaseMoles(int phaseSystemIndex)
+  {
+    double moles;
+    int info;
+    auto fortran_index = phaseSystemIndex + 1;
+    TCAPI_getPhaseMolesBySystemIndex(&fortran_index, &moles, &info);
+    return {moles, info};
+  }
+
+  std::pair<int, int> getElementIndex(int atomicNumber)
+  {
+    int index, info;
+    TCAPI_getElementIndexByAtomicNumber(&atomicNumber, &index, &info);
+    return {index - 1, info};
+  }
+
+  std::pair<double, int> getElementPotential(int elementSystemIndex)
+  {
+    double potential;
+    int info;
+    auto fortran_index = elementSystemIndex + 1;
+    TCAPI_getElementPotential(&fortran_index, &potential, &info);
+    return {potential, info};
+  }
+
+  std::pair<double, int> getOutputSiteFraction(const std::string &phaseName, int sublattice, int constituent)
   {
     double siteFraction;
     int info;
@@ -406,8 +449,7 @@ namespace Thermochimica
     return {siteFraction, info};
   }
 
-  std::pair<double, int>
-  getSublSiteMol(const std::string &phaseName, int sublattice, int constituent)
+  std::pair<double, int> getSublSiteMol(const std::string &phaseName, int sublattice, int constituent)
   {
     double siteMoles;
     int info;
@@ -435,8 +477,7 @@ namespace Thermochimica
     return isMQM;
   }
 
-  std::pair<double, int>
-  getMqmqaMolesPairs(const std::string &phaseName)
+  std::pair<double, int> getMqmqaMolesPairs(const std::string &phaseName)
   {
     double molesPairs;
     int info;
@@ -444,8 +485,7 @@ namespace Thermochimica
     return {molesPairs, info};
   }
 
-  std::pair<double, int>
-  getMqmqaPairMolFraction(const std::string &phaseName, const std::string &pairName)
+  std::pair<double, int> getMqmqaPairMolFraction(const std::string &phaseName, const std::string &pairName)
   {
     double molesPairs;
     int info;
@@ -453,8 +493,7 @@ namespace Thermochimica
     return {molesPairs, info};
   }
 
-  std::tuple<int, int, int>
-  getMqmqaNumberPairsQuads(const std::string &phaseName)
+  std::tuple<int, int, int> getMqmqaNumberPairsQuads(const std::string &phaseName)
   {
     int nPairs;
     int nQuads;
@@ -463,8 +502,7 @@ namespace Thermochimica
     return std::make_tuple(nPairs, nQuads, info);
   }
 
-  std::pair<double, int>
-  getMqmqaConstituentFraction(const std::string &phaseName, int sublattice, const std::string &constituent)
+  std::pair<double, int> getMqmqaConstituentFraction(const std::string &phaseName, int sublattice, const std::string &constituent)
   {
     double moleFraction;
     int info;
@@ -472,8 +510,7 @@ namespace Thermochimica
     return {moleFraction, info};
   }
 
-  ReinitializationData
-  getReinitData()
+  ReinitializationData getReinitData()
   {
     ReinitializationData data;
     int available, iterations;
@@ -484,14 +521,7 @@ namespace Thermochimica
     data.chemicalPotential.resize(species);
     data.moleFraction.resize(species);
 
-    TCAPI_getReinitData(data.assemblage.data(),
-                        data.molesPhase.data(),
-                        data.elementPotential.data(),
-                        data.chemicalPotential.data(),
-                        data.moleFraction.data(),
-                        data.elementsUsed.data(),
-                        &available,
-                        &iterations);
+    TCAPI_getReinitData(data.assemblage.data(), data.molesPhase.data(), data.elementPotential.data(), data.chemicalPotential.data(), data.moleFraction.data(), data.elementsUsed.data(), &available, &iterations);
 
     data.reinitAvailable = available;
     data.GEM_iterations = iterations;
@@ -499,11 +529,23 @@ namespace Thermochimica
     return data;
   }
 
-  void
-  setReinitData(const ReinitializationData & data)
+  void setReinitData(const ReinitializationData &data)
   {
     auto [elements, species] = getReinitDataSizes();
     TCAPI_setReinitData(&elements, &species, data.assemblage.data(), data.molesPhase.data(), data.elementPotential.data(), data.chemicalPotential.data(), data.moleFraction.data(), data.elementsUsed.data());
+  }
+
+  std::pair<bool, int> getReinitData(ReinitializationDataView data)
+  {
+    int available, iterations;
+    TCAPI_getReinitData(data.assemblage, data.molesPhase, data.elementPotential, data.chemicalPotential, data.moleFraction, data.elementsUsed, &available, &iterations);
+    return {available != 0, iterations};
+  }
+
+  void setReinitData(ReinitializationDataView data)
+  {
+    auto [elements, species] = getReinitDataSizes();
+    TCAPI_setReinitData(&elements, &species, data.assemblage, data.molesPhase, data.elementPotential, data.chemicalPotential, data.moleFraction, data.elementsUsed);
   }
 
   void setHeatCapacityEnthalpyEntropyRequested(bool requested)
@@ -545,4 +587,4 @@ namespace Thermochimica
     TCAPI_setMassBalanceTolerance(&tolerance);
   }
 
-}
+} // namespace Thermochimica
