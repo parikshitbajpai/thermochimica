@@ -897,6 +897,107 @@ subroutine GetOutputMolSpeciesPhaseISO(cPhase, lcPhase, cSpecies, lcSpecies, dMo
 
 end subroutine GetOutputMolSpeciesPhaseISO
 
+subroutine GetOutputMolSpeciesPhaseByIndexISO(iPhaseSystem, iSpeciesPhase, dMolFractionOut, INFO) &
+    bind(C, name="TCAPI_getOutputMolSpeciesPhaseByIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: cSolnPhaseName, dMolFraction, iAssemblage, nElements, &
+                            nSolnPhasesSys, nSpeciesPhase
+    USE ModuleThermoIO, ONLY: INFOThermo
+
+    implicit none
+
+    integer(C_INT), intent(in)    :: iPhaseSystem, iSpeciesPhase
+    real(C_DOUBLE), intent(out)   :: dMolFractionOut
+    integer(C_INT), intent(out)   :: INFO
+    integer(C_INT)                :: i, iActualPhase, iActualSpecies
+
+    INFO = 0
+    dMolFractionOut = 0D0
+
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+
+    if (iPhaseSystem <= 0 .OR. iPhaseSystem > nSolnPhasesSys .OR. iSpeciesPhase <= 0 .OR. &
+        iSpeciesPhase > nSpeciesPhase(iPhaseSystem) - nSpeciesPhase(iPhaseSystem - 1)) then
+        INFO = 2
+        return
+    end if
+
+    do i = 1, nElements
+        if (iAssemblage(i) < 0) then
+            if (cSolnPhaseName(-iAssemblage(i)) == cSolnPhaseName(iPhaseSystem)) then
+                iActualPhase = -iAssemblage(i)
+                iActualSpecies = nSpeciesPhase(iActualPhase - 1) + iSpeciesPhase
+                dMolFractionOut = dMolFraction(iActualSpecies)
+                return
+            end if
+        end if
+    end do
+
+    INFO = 1
+
+end subroutine GetOutputMolSpeciesPhaseByIndexISO
+
+subroutine GetElementMolesInPhaseByIndexISO(iElementSystem, iPhaseSystem, dMolesOut, INFO) &
+    bind(C, name="TCAPI_getElementMolesInPhaseByIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: cSolnPhaseName, dMolesPhase, dMolesSpecies, dStoichSpecies, &
+                            iAssemblage, nElements, nSolnPhasesSys, nSpeciesPhase
+    USE ModuleThermoIO, ONLY: INFOThermo
+
+    implicit none
+
+    integer(C_INT), intent(in)  :: iElementSystem, iPhaseSystem
+    real(C_DOUBLE), intent(out) :: dMolesOut
+    integer(C_INT), intent(out) :: INFO
+    integer(C_INT)              :: i, iActualPhase, iTarget, j
+
+    INFO = 0
+    dMolesOut = 0D0
+
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+    if (iElementSystem <= 0 .OR. iElementSystem > nElements) then
+        INFO = 1
+        return
+    end if
+    if (iPhaseSystem <= 0) then
+        INFO = 2
+        return
+    end if
+
+    if (iPhaseSystem <= nSolnPhasesSys) then
+        do i = 1, nElements
+            if (iAssemblage(i) < 0) then
+                if (cSolnPhaseName(-iAssemblage(i)) == cSolnPhaseName(iPhaseSystem)) then
+                    iActualPhase = -iAssemblage(i)
+                    do j = nSpeciesPhase(iActualPhase - 1) + 1, nSpeciesPhase(iActualPhase)
+                        dMolesOut = dMolesOut + dMolesSpecies(j) * dStoichSpecies(j, iElementSystem)
+                    end do
+                    return
+                end if
+            end if
+        end do
+    else
+        iTarget = MAXVAL(nSpeciesPhase) + iPhaseSystem - nSolnPhasesSys
+        do i = 1, nElements
+            if (iAssemblage(i) == iTarget) then
+                dMolesOut = dMolesPhase(i) * dStoichSpecies(iTarget, iElementSystem)
+                return
+            end if
+        end do
+    end if
+
+    INFO = 2
+
+end subroutine GetElementMolesInPhaseByIndexISO
+
 subroutine GetOutputSiteFractionISO(cSolnOut, lcSolnOut, iSublatticeOut, iConstituentOut, dSiteFractionOut, INFO) &
     bind(C, name="TCAPI_getOutputSiteFraction")
 
@@ -955,11 +1056,137 @@ subroutine GetPhaseIndexISO(cPhaseName, lcPhaseName, iIndexOut, INFO) &
 
     call c_f_pointer(cptr=c_loc(cPhaseName), fptr=fPhaseName)
 
-    call GetPhaseIndex(cPhaseName, lcPhaseName, iIndexOut, INFO)
+    call GetPhaseIndex(fPhaseName, lcPhaseName, iIndexOut, INFO)
 
     return
 
 end subroutine GetPhaseIndexISO
+
+subroutine GetPhaseIndexBySystemIndexISO(iPhaseSystem, iIndexOut, INFO) &
+    bind(C, name="TCAPI_getPhaseIndexBySystemIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: cSolnPhaseName, iAssemblage, nElements, nSolnPhasesSys, nSpeciesPhase
+    USE ModuleThermoIO, ONLY: INFOThermo
+
+    implicit none
+
+    integer(C_INT), intent(in)  :: iPhaseSystem
+    integer(C_INT), intent(out) :: iIndexOut, INFO
+    integer(C_INT)              :: i, iTarget
+
+    INFO = 0
+    iIndexOut = 0
+
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+
+    if (iPhaseSystem <= 0) then
+        INFO = 1
+        return
+    end if
+
+    if (iPhaseSystem <= nSolnPhasesSys) then
+        do i = 1, nElements
+            if (iAssemblage(i) < 0) then
+                if (cSolnPhaseName(-iAssemblage(i)) == cSolnPhaseName(iPhaseSystem)) then
+                    iIndexOut = i
+                    return
+                end if
+            end if
+        end do
+    else
+        iTarget = MAXVAL(nSpeciesPhase) + iPhaseSystem - nSolnPhasesSys
+        do i = 1, nElements
+            if (iAssemblage(i) == iTarget) then
+                iIndexOut = i
+                return
+            end if
+        end do
+    end if
+
+end subroutine GetPhaseIndexBySystemIndexISO
+
+subroutine GetPhaseMolesBySystemIndexISO(iPhaseSystem, dMolesOut, INFO) &
+    bind(C, name="TCAPI_getPhaseMolesBySystemIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: cSolnPhaseName, dMolesPhase, iAssemblage, nElements, &
+                            nSolnPhasesSys, nSpeciesPhase
+    USE ModuleThermoIO, ONLY: INFOThermo
+
+    implicit none
+
+    integer(C_INT), intent(in)  :: iPhaseSystem
+    real(C_DOUBLE), intent(out) :: dMolesOut
+    integer(C_INT), intent(out) :: INFO
+    integer(C_INT)              :: i, iTarget
+
+    INFO = 0
+    dMolesOut = 0D0
+
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+    if (iPhaseSystem <= 0) then
+        INFO = 1
+        return
+    end if
+
+    if (iPhaseSystem <= nSolnPhasesSys) then
+        do i = 1, nElements
+            if (iAssemblage(i) < 0) then
+                if (cSolnPhaseName(-iAssemblage(i)) == cSolnPhaseName(iPhaseSystem)) then
+                    dMolesOut = dMolesPhase(i)
+                    return
+                end if
+            end if
+        end do
+    else
+        iTarget = MAXVAL(nSpeciesPhase) + iPhaseSystem - nSolnPhasesSys
+        do i = 1, nElements
+            if (iAssemblage(i) == iTarget) then
+                dMolesOut = dMolesPhase(i)
+                return
+            end if
+        end do
+    end if
+
+end subroutine GetPhaseMolesBySystemIndexISO
+
+subroutine GetElementIndexByAtomicNumberISO(iAtomicNumber, iIndexOut, INFO) &
+    bind(C, name="TCAPI_getElementIndexByAtomicNumber")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: iElementSystem
+    USE ModuleThermoIO, ONLY: INFOThermo
+
+    implicit none
+
+    integer(C_INT), intent(in)  :: iAtomicNumber
+    integer(C_INT), intent(out) :: iIndexOut, INFO
+    integer(C_INT)              :: i
+
+    INFO = 0
+    iIndexOut = 0
+
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+
+    do i = 1, SIZE(iElementSystem)
+        if (iElementSystem(i) /= 0) iIndexOut = iIndexOut + 1
+        if (iElementSystem(i) == iAtomicNumber) return
+    end do
+
+    iIndexOut = 0
+    INFO = 1
+
+end subroutine GetElementIndexByAtomicNumberISO
 
 subroutine GetPureConPhaseMolISO(cPureConOut, lcPureConOut, dPureConMolOut, INFO) &
     bind(C, name="TCAPI_getPureConPhaseMol")
