@@ -1157,6 +1157,225 @@ subroutine GetPhaseMolesBySystemIndexISO(iPhaseSystem, dMolesOut, INFO) &
 
 end subroutine GetPhaseMolesBySystemIndexISO
 
+subroutine GetSpeciesChemicalPotentialByIndexISO(iPhaseSystem, iSpeciesPhase, dPotentialOut, INFO) &
+    bind(C, name="TCAPI_getSpeciesChemicalPotentialByIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleGEMSolver, ONLY: lSolnPhases
+    USE ModuleThermo, ONLY: dChemicalPotential, dIdealConstant, &
+                            nSolnPhasesSys, nSpeciesPhase
+    USE ModuleThermoIO, ONLY: dTemperature, INFOThermo
+
+    implicit none
+
+    integer(C_INT), intent(in)  :: iPhaseSystem, iSpeciesPhase
+    real(C_DOUBLE), intent(out) :: dPotentialOut
+    integer(C_INT), intent(out) :: INFO
+    integer(C_INT)              :: iSpecies
+
+    INFO = 0
+    dPotentialOut = 0D0
+
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+    if (iPhaseSystem <= 0 .OR. iPhaseSystem > nSolnPhasesSys .OR. iSpeciesPhase <= 0 .OR. &
+        iSpeciesPhase > nSpeciesPhase(iPhaseSystem) - nSpeciesPhase(iPhaseSystem - 1)) then
+        INFO = 2
+        return
+    end if
+    if (.NOT. lSolnPhases(iPhaseSystem)) then
+        INFO = 1
+        return
+    end if
+
+    iSpecies = nSpeciesPhase(iPhaseSystem - 1) + iSpeciesPhase
+    dPotentialOut = dChemicalPotential(iSpecies) * dIdealConstant * dTemperature
+
+end subroutine GetSpeciesChemicalPotentialByIndexISO
+
+subroutine GetMqmqaEndmemberStoichiometricPotentialByIndexISO(iPhaseSystem, iEndmember, dPotentialOut, INFO) &
+    bind(C, name="TCAPI_getMqmqaEndmemberStoichiometricPotentialByIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: cSolnPhaseType, dElementPotential, dIdealConstant, dStoichPairs, &
+                            iPhaseSublattice, nElements, nPairsSRO, nSolnPhasesSys
+    USE ModuleThermoIO, ONLY: dTemperature, INFOThermo
+
+    implicit none
+
+    integer(C_INT), intent(in)  :: iPhaseSystem, iEndmember
+    real(C_DOUBLE), intent(out) :: dPotentialOut
+    integer(C_INT), intent(out) :: INFO
+    integer(C_INT)              :: i, iSublatticePhase
+
+    INFO = 0
+    dPotentialOut = 0D0
+
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+    if (iPhaseSystem <= 0 .OR. iPhaseSystem > nSolnPhasesSys) then
+        INFO = 2
+        return
+    end if
+    if (cSolnPhaseType(iPhaseSystem) /= 'SUBG' .AND. cSolnPhaseType(iPhaseSystem) /= 'SUBQ') then
+        INFO = 2
+        return
+    end if
+
+    iSublatticePhase = iPhaseSublattice(iPhaseSystem)
+    if (iEndmember <= 0 .OR. iEndmember > nPairsSRO(iSublatticePhase, 1)) then
+        INFO = 2
+        return
+    end if
+
+    do i = 1, nElements
+        dPotentialOut = dPotentialOut + dElementPotential(i) * dStoichPairs(iSublatticePhase, iEndmember, i)
+    end do
+    dPotentialOut = dPotentialOut * dIdealConstant * dTemperature
+
+end subroutine GetMqmqaEndmemberStoichiometricPotentialByIndexISO
+
+subroutine GetPhaseGibbsEnergyBySystemIndexISO(iPhaseSystem, dTotalOut, dMolarOut, INFO) &
+    bind(C, name="TCAPI_getPhaseGibbsEnergyBySystemIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: dChemicalPotential, dIdealConstant, dMolesPhase, dMolFraction, dStdGibbsEnergy, &
+                            iAssemblage, nConPhasesSys, nElements, nSolnPhasesSys, nSpeciesPhase
+    USE ModuleThermoIO, ONLY: dTemperature, INFOThermo
+
+    implicit none
+
+    integer(C_INT), intent(in)  :: iPhaseSystem
+    real(C_DOUBLE), intent(out) :: dTotalOut, dMolarOut
+    integer(C_INT), intent(out) :: INFO
+    integer(C_INT)              :: i, iFirst, iLast, iSpecies
+    real(C_DOUBLE)              :: dFractionSum
+
+    INFO = 0
+    dTotalOut = 0D0
+    dMolarOut = 0D0
+
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+    if (iPhaseSystem <= 0 .OR. iPhaseSystem > nSolnPhasesSys + nConPhasesSys) then
+        INFO = 2
+        return
+    end if
+
+    if (iPhaseSystem <= nSolnPhasesSys) then
+        do i = 1, nElements
+            if (iAssemblage(i) == -iPhaseSystem) then
+                iFirst = nSpeciesPhase(iPhaseSystem - 1) + 1
+                iLast = nSpeciesPhase(iPhaseSystem)
+                dFractionSum = SUM(dMolFraction(iFirst:iLast))
+                if (dFractionSum <= 0D0) then
+                    INFO = 1
+                    return
+                end if
+                dMolarOut = SUM(dChemicalPotential(iFirst:iLast) * dMolFraction(iFirst:iLast)) / dFractionSum
+                dMolarOut = dMolarOut * dIdealConstant * dTemperature
+                dTotalOut = dMolarOut * dMolesPhase(i)
+                return
+            end if
+        end do
+    else
+        iSpecies = nSpeciesPhase(nSolnPhasesSys) + iPhaseSystem - nSolnPhasesSys
+        do i = 1, nElements
+            if (iAssemblage(i) == iSpecies) then
+                dMolarOut = dStdGibbsEnergy(iSpecies) * dIdealConstant * dTemperature
+                dTotalOut = dMolarOut * dMolesPhase(i)
+                return
+            end if
+        end do
+    end if
+
+    INFO = 1
+
+end subroutine GetPhaseGibbsEnergyBySystemIndexISO
+
+subroutine GetPhaseDrivingForceBySystemIndexISO(iPhaseSystem, dDrivingForceOut, INFO) &
+    bind(C, name="TCAPI_getPhaseDrivingForceBySystemIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: dChemicalPotential, dElementPotential, dIdealConstant, dMolFraction, &
+                            dSpeciesTotalAtoms, dStdGibbsEnergy, dStoichSpecies, &
+                            nConPhasesSys, nElements, nSolnPhasesSys, nSpeciesPhase
+    USE ModuleThermoIO, ONLY: dTemperature, INFOThermo
+
+    implicit none
+
+    integer(C_INT), intent(in)  :: iPhaseSystem
+    real(C_DOUBLE), intent(out) :: dDrivingForceOut
+    integer(C_INT), intent(out) :: INFO
+    integer(C_INT)              :: iFirst, iLast, iSpecies
+    real(C_DOUBLE)              :: dAtomSum, dReferencePotential, dResidual
+
+    INFO = 0
+    dDrivingForceOut = 0D0
+
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+    if (iPhaseSystem <= 0 .OR. iPhaseSystem > nSolnPhasesSys + nConPhasesSys) then
+        INFO = 2
+        return
+    end if
+
+    if (iPhaseSystem <= nSolnPhasesSys) then
+        iFirst = nSpeciesPhase(iPhaseSystem - 1) + 1
+        iLast = nSpeciesPhase(iPhaseSystem)
+        dAtomSum = 0D0
+        dResidual = 0D0
+        do iSpecies = iFirst, iLast
+            if (dMolFraction(iSpecies) > 0D0) then
+                dReferencePotential = SUM(dElementPotential(1:nElements) * dStoichSpecies(iSpecies, 1:nElements))
+                dResidual = dResidual + dMolFraction(iSpecies) * &
+                            (dChemicalPotential(iSpecies) - dReferencePotential)
+                dAtomSum = dAtomSum + dMolFraction(iSpecies) * dSpeciesTotalAtoms(iSpecies)
+            end if
+        end do
+        if (dAtomSum <= 0D0) then
+            INFO = 1
+            return
+        end if
+        dDrivingForceOut = dResidual / dAtomSum
+    else
+        iSpecies = nSpeciesPhase(nSolnPhasesSys) + iPhaseSystem - nSolnPhasesSys
+        dReferencePotential = SUM(dElementPotential(1:nElements) * dStoichSpecies(iSpecies, 1:nElements))
+        dDrivingForceOut = (dStdGibbsEnergy(iSpecies) - dReferencePotential) / dSpeciesTotalAtoms(iSpecies)
+    end if
+
+    dDrivingForceOut = dDrivingForceOut * dIdealConstant * dTemperature
+
+end subroutine GetPhaseDrivingForceBySystemIndexISO
+
+subroutine GetSystemGibbsEnergyISO(dGibbsEnergyOut, INFO) bind(C, name="TCAPI_getSystemGibbsEnergy")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermoIO, ONLY: dGibbsEnergySys, INFOThermo
+
+    implicit none
+
+    real(C_DOUBLE), intent(out) :: dGibbsEnergyOut
+    integer(C_INT), intent(out) :: INFO
+
+    INFO = 0
+    dGibbsEnergyOut = 0D0
+    if (INFOThermo /= 0) then
+        INFO = -1
+        return
+    end if
+    dGibbsEnergyOut = dGibbsEnergySys
+
+end subroutine GetSystemGibbsEnergyISO
+
 subroutine GetElementIndexByAtomicNumberISO(iAtomicNumber, iIndexOut, INFO) &
     bind(C, name="TCAPI_getElementIndexByAtomicNumber")
 

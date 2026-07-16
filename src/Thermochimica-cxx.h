@@ -45,6 +45,7 @@ namespace Thermochimica
   std::vector<std::size_t> getNumberSpeciesSystem();
   std::vector<std::string> getSpeciesInPhase(int phase_index);
   std::vector<std::vector<std::string>> getSpeciesSystem();
+  std::vector<std::string> getThermodynamicSpeciesInPhase(int phase_index);
 
   // re-initialization-related functions
   void saveReinitData();
@@ -69,6 +70,17 @@ namespace Thermochimica
   std::pair<int, int> getPhaseIndex(const std::string &phaseName);
   std::pair<int, int> getPhaseIndex(int phaseSystemIndex);
   std::pair<double, int> getPhaseMoles(int phaseSystemIndex);
+  std::pair<double, int> getSpeciesChemicalPotential(int phaseSystemIndex, int speciesPhaseIndex);
+  std::pair<double, int> getMqmqaEndmemberStoichiometricPotential(int phaseSystemIndex, int endmemberIndex);
+  struct PhaseGibbsEnergy
+  {
+    double total;
+    double molar;
+    int status;
+  };
+  PhaseGibbsEnergy getPhaseGibbsEnergy(int phaseSystemIndex);
+  std::pair<double, int> getPhaseDrivingForce(int phaseSystemIndex);
+  std::pair<double, int> getSystemGibbsEnergy();
   std::pair<int, int> getElementIndex(int atomicNumber);
   std::pair<double, int> getElementPotential(int elementSystemIndex);
   std::pair<double, int> getOutputSiteFraction(const std::string &phaseName, int sublattice, int constituent);

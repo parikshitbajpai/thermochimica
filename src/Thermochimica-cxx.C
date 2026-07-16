@@ -259,6 +259,25 @@ namespace Thermochimica
     return species;
   }
 
+  std::vector<std::string> getThermodynamicSpeciesInPhase(int phase_index)
+  {
+    const auto n_species = getNumberSpeciesSystem();
+    if (phase_index < 0 || phase_index >= static_cast<int>(n_species.size()))
+      return {};
+
+    const auto first = phase_index == 0 ? 0 : n_species[phase_index - 1];
+    const auto count = n_species[phase_index] - first;
+    std::vector<std::string> species(count);
+    for (std::size_t i = 0; i < count; ++i)
+    {
+      auto index = static_cast<int>(first + i + 1);
+      int length;
+      char *buffer = TCAPI_getSpeciesAtIndex(&index, &length);
+      species[i] = std::string(buffer, buffer + length);
+    }
+    return species;
+  }
+
   // re-initialization-related functions
   void saveReinitData()
   {
@@ -423,6 +442,51 @@ namespace Thermochimica
     auto fortran_index = phaseSystemIndex + 1;
     TCAPI_getPhaseMolesBySystemIndex(&fortran_index, &moles, &info);
     return {moles, info};
+  }
+
+  std::pair<double, int> getSpeciesChemicalPotential(int phaseSystemIndex, int speciesPhaseIndex)
+  {
+    double potential;
+    int info;
+    auto fortran_phase = phaseSystemIndex + 1;
+    auto fortran_species = speciesPhaseIndex + 1;
+    TCAPI_getSpeciesChemicalPotentialByIndex(&fortran_phase, &fortran_species, &potential, &info);
+    return {potential, info};
+  }
+
+  std::pair<double, int> getMqmqaEndmemberStoichiometricPotential(int phaseSystemIndex, int endmemberIndex)
+  {
+    double potential;
+    int info;
+    auto fortran_phase = phaseSystemIndex + 1;
+    auto fortran_endmember = endmemberIndex + 1;
+    TCAPI_getMqmqaEndmemberStoichiometricPotentialByIndex(&fortran_phase, &fortran_endmember, &potential, &info);
+    return {potential, info};
+  }
+
+  PhaseGibbsEnergy getPhaseGibbsEnergy(int phaseSystemIndex)
+  {
+    PhaseGibbsEnergy result;
+    auto fortran_phase = phaseSystemIndex + 1;
+    TCAPI_getPhaseGibbsEnergyBySystemIndex(&fortran_phase, &result.total, &result.molar, &result.status);
+    return result;
+  }
+
+  std::pair<double, int> getPhaseDrivingForce(int phaseSystemIndex)
+  {
+    double driving_force;
+    int info;
+    auto fortran_phase = phaseSystemIndex + 1;
+    TCAPI_getPhaseDrivingForceBySystemIndex(&fortran_phase, &driving_force, &info);
+    return {driving_force, info};
+  }
+
+  std::pair<double, int> getSystemGibbsEnergy()
+  {
+    double gibbs_energy;
+    int info;
+    TCAPI_getSystemGibbsEnergy(&gibbs_energy, &info);
+    return {gibbs_energy, info};
   }
 
   std::pair<int, int> getElementIndex(int atomicNumber)

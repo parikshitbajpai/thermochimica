@@ -29,6 +29,11 @@ extern "C"
   void TCAPI_getPhaseIndex(const char *, std::size_t, int *, int *);
   void TCAPI_getPhaseIndexBySystemIndex(const int *, int *, int *);
   void TCAPI_getPhaseMolesBySystemIndex(const int *, double *, int *);
+  void TCAPI_getSpeciesChemicalPotentialByIndex(const int *, const int *, double *, int *);
+  void TCAPI_getMqmqaEndmemberStoichiometricPotentialByIndex(const int *, const int *, double *, int *);
+  void TCAPI_getPhaseGibbsEnergyBySystemIndex(const int *, double *, double *, int *);
+  void TCAPI_getPhaseDrivingForceBySystemIndex(const int *, double *, int *);
+  void TCAPI_getSystemGibbsEnergy(double *, int *);
   void TCAPI_getElementIndexByAtomicNumber(const int *, int *, int *);
 
   void TCAPI_getOutputSiteFraction(const char *, std::size_t, int *, int *, double *, int *);
