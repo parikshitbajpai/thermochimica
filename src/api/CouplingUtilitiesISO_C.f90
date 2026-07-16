@@ -17,6 +17,57 @@ subroutine SetThermoFileNameISO(cFileName, lcFileName) &
 
 end subroutine SetThermoFileNameISO
 
+subroutine ClearPhaseSelectionISO() &
+    bind(C, name="TCAPI_clearPhaseSelection")
+
+    USE ModuleThermoIO, ONLY: nPhasesExcluded, nPhasesExcludedExcept, &
+                              cPhasesExcluded, cPhasesExcludedExcept
+
+    implicit none
+
+    nPhasesExcluded = 0
+    nPhasesExcludedExcept = 0
+    cPhasesExcluded = ''
+    cPhasesExcludedExcept = ''
+
+end subroutine ClearPhaseSelectionISO
+
+subroutine AddPhaseSelectionISO(cPhase, lcPhase, lInclude, iInfo) &
+    bind(C, name="TCAPI_addPhaseSelection")
+
+    USE, INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermoIO, ONLY: nPhasesExcluded, nPhasesExcludedExcept, &
+                              cPhasesExcluded, cPhasesExcludedExcept
+
+    implicit none
+
+    character(kind=c_char,len=1), target, intent(in) :: cPhase(*)
+    integer(c_size_t), intent(in), value :: lcPhase
+    logical(c_bool), intent(in) :: lInclude
+    integer(c_int), intent(out) :: iInfo
+    character(kind=c_char,len=lcPhase), pointer :: fPhase
+
+    iInfo = 0
+    if (lcPhase == 0 .OR. lcPhase > len(cPhasesExcluded(1))) then
+        iInfo = 1
+        return
+    else if ((lInclude .AND. nPhasesExcludedExcept >= size(cPhasesExcludedExcept)) .OR. &
+             (.NOT. lInclude .AND. nPhasesExcluded >= size(cPhasesExcluded))) then
+        iInfo = 2
+        return
+    end if
+
+    call c_f_pointer(cptr=c_loc(cPhase), fptr=fPhase)
+    if (lInclude) then
+        nPhasesExcludedExcept = nPhasesExcludedExcept + 1
+        cPhasesExcludedExcept(nPhasesExcludedExcept) = fPhase
+    else
+        nPhasesExcluded = nPhasesExcluded + 1
+        cPhasesExcluded(nPhasesExcluded) = fPhase
+    end if
+
+end subroutine AddPhaseSelectionISO
+
 subroutine SetUnitTemperatureISO(cUnitTemperature, lcUnitTemperature) &
     bind(C, name="TCAPI_setUnitTemperature")
 

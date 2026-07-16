@@ -17,6 +17,10 @@ namespace Thermochimica
   void compThermoData();
 
   void setThermoFilename(const std::string &filename);
+  /** Exclude the named phases from subsequent equilibrium calculations; return zero on success. */
+  int setExcludedPhases(const std::vector<std::string> &phases);
+  /** Exclude every phase except the named phases; return zero on success. */
+  int setIncludedPhases(const std::vector<std::string> &phases);
   void setUnitTemperature(const std::string &tunit);
   void setUnitPressure(const std::string &punit);
   void setUnitMass(const std::string &munit);

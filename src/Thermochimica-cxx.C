@@ -45,6 +45,38 @@ namespace Thermochimica
     TCAPI_setThermoFilename(filename.c_str(), filename.length());
   }
 
+  namespace
+  {
+    int setPhaseSelection(const std::vector<std::string> &phases, bool include)
+    {
+      if (phases.size() > 1000)
+        return 2;
+      for (const auto &phase : phases)
+        if (phase.empty() || phase.length() > 25)
+          return 1;
+
+      TCAPI_clearPhaseSelection();
+      for (const auto &phase : phases)
+      {
+        int status = 0;
+        TCAPI_addPhaseSelection(phase.c_str(), phase.length(), &include, &status);
+        if (status != 0)
+          return status;
+      }
+      return 0;
+    }
+  }
+
+  int setExcludedPhases(const std::vector<std::string> &phases)
+  {
+    return setPhaseSelection(phases, false);
+  }
+
+  int setIncludedPhases(const std::vector<std::string> &phases)
+  {
+    return setPhaseSelection(phases, true);
+  }
+
   void setUnitTemperature(const std::string &tunit)
   {
     TCAPI_setUnitTemperature(tunit.c_str(), tunit.length());

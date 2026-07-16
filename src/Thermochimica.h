@@ -5,6 +5,8 @@
 extern "C"
 {
   void TCAPI_setThermoFilename(const char *, std::size_t);
+  void TCAPI_clearPhaseSelection();
+  void TCAPI_addPhaseSelection(const char *, std::size_t, bool *, int *);
   void TCAPI_setUnitTemperature(const char *, std::size_t);
   void TCAPI_setUnitPressure(const char *, std::size_t);
   void TCAPI_setUnitMass(const char *, std::size_t);
