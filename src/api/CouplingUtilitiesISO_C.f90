@@ -1704,3 +1704,147 @@ subroutine SetFuzzyStoichISO(lFuzzyStoichIn) &
 
     return
   end subroutine SetMassBalanceToleranceISO
+
+subroutine GetNumberSublatticesISO(iPhase, iCount, iInfo) &
+    bind(C, name="TCAPI_getNumberSublattices")
+
+    USE, INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: nSolnPhasesSys, iPhaseSublattice, nSublatticePhase
+
+    implicit none
+
+    integer(c_int), intent(in) :: iPhase
+    integer(c_int), intent(out) :: iCount, iInfo
+    integer :: iSublatticePhase
+
+    iCount = 0
+    iInfo = 0
+    if (iPhase < 1 .OR. iPhase > nSolnPhasesSys) then
+        iInfo = 1
+        return
+    end if
+
+    iSublatticePhase = iPhaseSublattice(iPhase)
+    if (iSublatticePhase < 1) then
+        iInfo = 2
+        return
+    end if
+    iCount = nSublatticePhase(iSublatticePhase)
+
+end subroutine GetNumberSublatticesISO
+
+subroutine GetNumberConstituentsISO(iPhase, iSublattice, iCount, iInfo) &
+    bind(C, name="TCAPI_getNumberConstituents")
+
+    USE, INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: nSolnPhasesSys, iPhaseSublattice, nSublatticePhase, &
+                            nConstituentSublattice
+
+    implicit none
+
+    integer(c_int), intent(in) :: iPhase, iSublattice
+    integer(c_int), intent(out) :: iCount, iInfo
+    integer :: iSublatticePhase
+
+    iCount = 0
+    iInfo = 0
+    if (iPhase < 1 .OR. iPhase > nSolnPhasesSys) then
+        iInfo = 1
+        return
+    end if
+    iSublatticePhase = iPhaseSublattice(iPhase)
+    if (iSublatticePhase < 1 .OR. iSublattice < 1 .OR. &
+        iSublattice > nSublatticePhase(iSublatticePhase)) then
+        iInfo = 2
+        return
+    end if
+    iCount = nConstituentSublattice(iSublatticePhase, iSublattice)
+
+end subroutine GetNumberConstituentsISO
+
+function GetConstituentNameAtIndexISO(iPhase, iSublattice, iConstituent, iLength, iInfo) &
+    bind(C, name="TCAPI_getConstituentNameAtIndex")
+
+    USE, INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: nSolnPhasesSys, iPhaseSublattice, nSublatticePhase, &
+                            nConstituentSublattice, cConstituentNameSUB
+
+    implicit none
+
+    integer(c_int), intent(in) :: iPhase, iSublattice, iConstituent
+    integer(c_int), intent(out) :: iLength, iInfo
+    integer :: i, iSublatticePhase
+    character(kind=c_char), dimension(8), save, target :: cName
+    type(c_ptr) :: GetConstituentNameAtIndexISO
+
+    iLength = 0
+    iInfo = 0
+    GetConstituentNameAtIndexISO = c_null_ptr
+    if (iPhase < 1 .OR. iPhase > nSolnPhasesSys) then
+        iInfo = 1
+        return
+    end if
+    iSublatticePhase = iPhaseSublattice(iPhase)
+    if (iSublatticePhase < 1 .OR. iSublattice < 1 .OR. &
+        iSublattice > nSublatticePhase(iSublatticePhase)) then
+        iInfo = 2
+        return
+    else if (iConstituent < 1 .OR. &
+             iConstituent > nConstituentSublattice(iSublatticePhase, iSublattice)) then
+        iInfo = 3
+        return
+    end if
+
+    iLength = len_trim(cConstituentNameSUB(iSublatticePhase, iSublattice, iConstituent))
+    cName = c_null_char
+    do i = 1, iLength
+        cName(i) = cConstituentNameSUB(iSublatticePhase, iSublattice, iConstituent)(i:i)
+    end do
+    GetConstituentNameAtIndexISO = c_loc(cName(1))
+
+end function GetConstituentNameAtIndexISO
+
+subroutine GetConstituentFractionByIndexISO(iPhase, iSublattice, iConstituent, dValue, iInfo) &
+    bind(C, name="TCAPI_getConstituentFractionByIndex")
+
+    USE, INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermo, ONLY: nSolnPhasesSys, cSolnPhaseName, cSolnPhaseType, iPhaseSublattice, &
+                            nSublatticePhase, nConstituentSublattice, cConstituentNameSUB
+
+    implicit none
+
+    integer(c_int), intent(in) :: iPhase, iSublattice, iConstituent
+    real(c_double), intent(out) :: dValue
+    integer(c_int), intent(out) :: iInfo
+    integer :: iSublatticePhase
+    integer(c_size_t) :: iPhaseNameLength
+
+    dValue = 0D0
+    iInfo = 0
+    if (iPhase < 1 .OR. iPhase > nSolnPhasesSys) then
+        iInfo = 1
+        return
+    end if
+    iSublatticePhase = iPhaseSublattice(iPhase)
+    if (iSublatticePhase < 1 .OR. iSublattice < 1 .OR. &
+        iSublattice > nSublatticePhase(iSublatticePhase)) then
+        iInfo = 2
+        return
+    else if (iConstituent < 1 .OR. &
+             iConstituent > nConstituentSublattice(iSublatticePhase, iSublattice)) then
+        iInfo = 3
+        return
+    end if
+
+    if (cSolnPhaseType(iPhase) == 'SUBL' .OR. cSolnPhaseType(iPhase) == 'SUBLM') then
+        iPhaseNameLength = len_trim(cSolnPhaseName(iPhase))
+        call GetOutputSiteFraction(cSolnPhaseName(iPhase), iPhaseNameLength, &
+                                   iSublattice, iConstituent, dValue, iInfo)
+    else if (cSolnPhaseType(iPhase) == 'SUBG' .OR. cSolnPhaseType(iPhase) == 'SUBQ') then
+        call GetMqmqaConstituentFraction(cSolnPhaseName(iPhase), iSublattice, &
+            cConstituentNameSUB(iSublatticePhase, iSublattice, iConstituent), dValue, iInfo)
+    else
+        iInfo = 4
+    end if
+
+end subroutine GetConstituentFractionByIndexISO

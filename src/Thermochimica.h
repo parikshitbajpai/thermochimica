@@ -37,6 +37,10 @@ extern "C"
   void TCAPI_getPhaseDrivingForceBySystemIndex(const int *, double *, int *);
   void TCAPI_getSystemGibbsEnergy(double *, int *);
   void TCAPI_getElementIndexByAtomicNumber(const int *, int *, int *);
+  void TCAPI_getNumberSublattices(const int *, int *, int *);
+  void TCAPI_getNumberConstituents(const int *, const int *, int *, int *);
+  char *TCAPI_getConstituentNameAtIndex(const int *, const int *, const int *, int *, int *);
+  void TCAPI_getConstituentFractionByIndex(const int *, const int *, const int *, double *, int *);
 
   void TCAPI_getOutputSiteFraction(const char *, std::size_t, int *, int *, double *, int *);
   void TCAPI_getSublSiteMol(const char *, std::size_t, int *, int *, double *, int *);

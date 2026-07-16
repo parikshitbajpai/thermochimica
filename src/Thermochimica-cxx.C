@@ -521,6 +521,56 @@ namespace Thermochimica
     return {gibbs_energy, info};
   }
 
+  std::vector<std::vector<std::string>> getConstituentsInPhase(int phaseSystemIndex)
+  {
+    const auto fortran_phase = phaseSystemIndex + 1;
+    int number_sublattices = 0;
+    int status = 0;
+    TCAPI_getNumberSublattices(&fortran_phase, &number_sublattices, &status);
+    if (status != 0)
+      return {};
+
+    std::vector<std::vector<std::string>> constituents(number_sublattices);
+    for (int sublattice = 0; sublattice < number_sublattices; ++sublattice)
+    {
+      const auto fortran_sublattice = sublattice + 1;
+      int number_constituents = 0;
+      TCAPI_getNumberConstituents(
+          &fortran_phase, &fortran_sublattice, &number_constituents, &status);
+      if (status != 0)
+        return {};
+      constituents[sublattice].reserve(number_constituents);
+      for (int constituent = 0; constituent < number_constituents; ++constituent)
+      {
+        const auto fortran_constituent = constituent + 1;
+        int length = 0;
+        auto * name = TCAPI_getConstituentNameAtIndex(&fortran_phase,
+                                                      &fortran_sublattice,
+                                                      &fortran_constituent,
+                                                      &length,
+                                                      &status);
+        if (status != 0)
+          return {};
+        constituents[sublattice].emplace_back(name, name + length);
+      }
+    }
+    return constituents;
+  }
+
+  std::pair<double, int> getConstituentFraction(const int phaseSystemIndex,
+                                                const int sublatticeIndex,
+                                                const int constituentIndex)
+  {
+    const auto fortran_phase = phaseSystemIndex + 1;
+    const auto fortran_sublattice = sublatticeIndex + 1;
+    const auto fortran_constituent = constituentIndex + 1;
+    double value = 0.0;
+    int status = 0;
+    TCAPI_getConstituentFractionByIndex(
+        &fortran_phase, &fortran_sublattice, &fortran_constituent, &value, &status);
+    return {value, status};
+  }
+
   std::pair<int, int> getElementIndex(int atomicNumber)
   {
     int index, info;

@@ -85,6 +85,12 @@ namespace Thermochimica
   PhaseGibbsEnergy getPhaseGibbsEnergy(int phaseSystemIndex);
   std::pair<double, int> getPhaseDrivingForce(int phaseSystemIndex);
   std::pair<double, int> getSystemGibbsEnergy();
+  /** Return constituent names by sublattice for a zero-based system phase index. */
+  std::vector<std::vector<std::string>> getConstituentsInPhase(int phaseSystemIndex);
+  /** Return a constituent fraction using zero-based phase, sublattice, and constituent indices. */
+  std::pair<double, int> getConstituentFraction(int phaseSystemIndex,
+                                                int sublatticeIndex,
+                                                int constituentIndex);
   std::pair<int, int> getElementIndex(int atomicNumber);
   std::pair<double, int> getElementPotential(int elementSystemIndex);
   std::pair<double, int> getOutputSiteFraction(const std::string &phaseName, int sublattice, int constituent);
