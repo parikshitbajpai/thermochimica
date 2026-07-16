@@ -15,8 +15,9 @@ program TestThermo92
 
     implicit none
 
-    integer :: i, kSoln, kCon, lSoln, lCon, nReal
+    integer :: i, kSoln, kCon, lSoln, lCon, nReal, infoConstraint
     real(8) :: totalElem, sumStoichSoln, sumStoichCon, fracSoln, fracCon
+    real(8) :: achievedConstraint, residualConstraint
     logical :: pass
 
     pass = .TRUE.
@@ -127,6 +128,33 @@ program TestThermo92
         call Thermochimica
 
         if (INFOThermo /= 0) pass = .FALSE.
+        if (dGEMFunctionNorm > dTolerance(1)) pass = .FALSE.
+    end if
+
+    ! Case 4: A single pure condensed phase can satisfy a phase constraint
+    ! without a solution phase being present in the equilibrium assemblage.
+    if (pass) then
+        call ResetThermoAll
+        INFOThermo = 0
+        dTemperature            = 1000D0
+        dPressure               = 1D0
+        dElementMass            = 0D0
+        dElementMass(6)         = 1D0
+        cInputUnitTemperature   = 'K'
+        cInputUnitPressure      = 'atm'
+        cInputUnitMass          = 'moles'
+        cThermoFileName         = DATA_DIRECTORY // 'CO.dat'
+        call ParseCSDataFile(cThermoFileName)
+        call AddPhaseFractionConstraint('C_Graphite(s)', 1D0)
+        call Thermochimica
+
+        if (INFOThermo /= 0) pass = .FALSE.
+        if (nSolnPhases /= 0) pass = .FALSE.
+        if (nConPhases /= 1) pass = .FALSE.
+        call GetPhaseConstraintResult(1, achievedConstraint, residualConstraint, infoConstraint)
+        if (infoConstraint /= 0) pass = .FALSE.
+        if (DABS(achievedConstraint - 1D0) > dTolerance(1)) pass = .FALSE.
+        if (DABS(residualConstraint) > dTolerance(1)) pass = .FALSE.
         if (dGEMFunctionNorm > dTolerance(1)) pass = .FALSE.
     end if
 

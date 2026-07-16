@@ -99,7 +99,7 @@ subroutine GEMNewton(INFO)
     implicit none
 
     integer                              :: i, j, k, l, m, INFO, nVar, iTry, nMaxTry, nElemExt, nReal
-    integer                              :: c, idxLambda, rel
+    integer                              :: c, idxLambda, rel, infoConstraint
     integer, dimension(:),   allocatable :: iErrCol
     integer, dimension(:),   allocatable :: IPIV
     real(8)                              :: dTemp, dSumStoich, dScoeff
@@ -268,10 +268,11 @@ subroutine GEMNewton(INFO)
                         end if
                     end do
                     if (idxLambda > 0) then
-                        dSumStoich = 0D0
-                        do i = 1, nReal
-                            dSumStoich = dSumStoich + dEffStoichSolnPhase(k,i)
-                        end do
+                        call GetPhaseConstraintCoefficient(c, dSumStoich, infoConstraint)
+                        if (infoConstraint /= 0) then
+                            INFO = 1
+                            exit TryLoop
+                        end if
                         A(idxLambda, j) = dSumStoich * dMolesPhase(l)
                         A(j, idxLambda) = A(idxLambda, j)
                     end if
@@ -299,11 +300,11 @@ subroutine GEMNewton(INFO)
                         end if
                     end do
                     if (idxLambda > 0) then
-                        dSumStoich = 0D0
-                        do i = 1, nReal
-                            dSumStoich = dSumStoich + dStoichSpecies(iAssemblage(k),i)
-                        end do
-                        dScoeff = dSumStoich
+                        call GetPhaseConstraintCoefficient(c, dScoeff, infoConstraint)
+                        if (infoConstraint /= 0) then
+                            INFO = 1
+                            exit TryLoop
+                        end if
                         A(idxLambda, j) = dScoeff
                         A(j, idxLambda) = A(idxLambda, j)
                     end if

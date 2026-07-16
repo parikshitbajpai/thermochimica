@@ -286,19 +286,15 @@ subroutine InitGEMSolver
             end if
         end do
 
-        ! Initialize constrained phase moles:
+        ! Initialize constrained phase moles using the shared element-mole coefficient:
         do i = 1, nPhaseConstraints
+            call GetPhaseConstraintCoefficient(i, dTemp, infoConstraints)
+            if (infoConstraints /= 0) then
+                INFOThermo = 83
+                return
+            end if
+            k = iPhaseConstraintID(i)
             if (iPhaseConstraintKind(i) == 0) then
-                k = iPhaseConstraintID(i)
-                call CompStoichSolnPhase(k)
-                dTemp = 0D0
-                do j = 1, nReal
-                    dTemp = dTemp + dEffStoichSolnPhase(k,j)
-                end do
-                if (dTemp <= 0D0) then
-                    INFOThermo = 83
-                    return
-                end if
                 l = 0
                 do j = nElements - nSolnPhases + 1, nElements
                     if (iAssemblage(j) == -k) then
@@ -308,15 +304,6 @@ subroutine InitGEMSolver
                 end do
                 if (l > 0) dMolesPhase(l) = dPhaseConstraintElemTarget(i) / dTemp
             else
-                k = iPhaseConstraintID(i)
-                dTemp = 0D0
-                do j = 1, nReal
-                    dTemp = dTemp + dStoichSpecies(k,j)
-                end do
-                if (dTemp <= 0D0) then
-                    INFOThermo = 83
-                    return
-                end if
                 l = 0
                 do j = 1, nConPhases
                     if (iAssemblage(j) == k) then

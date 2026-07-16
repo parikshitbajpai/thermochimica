@@ -69,6 +69,12 @@ Constraint rows:
 - The C and C++ add functions return status 1 for an empty name and status 2 for a
   non-finite or out-of-range fraction. Phase-name resolution remains a solve-time check.
 
+## Output
+Successful JSON output includes a `phase constraints` object containing each requested
+phase's target fraction, achieved fraction, normalized residual, and Lagrange multiplier.
+The achieved fraction and residual are computed by the same shared routines used by the
+solver convergence checks.
+
 ## Key Code Touch Points
 - New module: src/module/ModulePhaseConstraints.f90
 - Parsing: src/parser/ParseInput*.f90, src/exec/RunCalculationList.F90

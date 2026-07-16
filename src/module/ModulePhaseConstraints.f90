@@ -199,24 +199,15 @@ contains
         implicit none
 
         integer, intent(out) :: INFO
-        integer :: i, j, nRealElements
+        integer :: i
         real(8) :: dTotal
 
         INFO = 0
 
         if (nPhaseConstraints <= 0) return
 
-        nRealElements = nElements - nChargedConstraints
-        if (nRealElements < 1) nRealElements = nElements
-
-        dTotal = 0D0
-        do j = 1, nRealElements
-            dTotal = dTotal + dMolesElement(j)
-        end do
-        if ((dTotal <= 0D0) .OR. (dTotal /= dTotal)) then
-            INFO = 1
-            return
-        end if
+        call GetPhaseConstraintTotalElementMoles(dTotal, INFO)
+        if (INFO /= 0) return
 
         if (allocated(dPhaseConstraintElemTarget)) deallocate(dPhaseConstraintElemTarget)
         allocate(dPhaseConstraintElemTarget(nPhaseConstraints))
@@ -267,6 +258,119 @@ contains
         end if
 
     end subroutine ValidatePhaseConstraints
+
+
+    subroutine GetPhaseConstraintTotalElementMoles(dTotal, INFO)
+        USE ModuleThermo
+        implicit none
+
+        real(8), intent(out) :: dTotal
+        integer, intent(out) :: INFO
+        integer :: j, nReal
+
+        INFO = 0
+        dTotal = 0D0
+        nReal = nElements - nChargedConstraints
+        if (nReal < 1) nReal = nElements
+
+        do j = 1, nReal
+            dTotal = dTotal + dMolesElement(j)
+        end do
+
+        if ((dTotal <= 0D0) .OR. (dTotal /= dTotal)) INFO = 1
+
+    end subroutine GetPhaseConstraintTotalElementMoles
+
+
+    subroutine GetPhaseConstraintCoefficient(iConstraint, dCoefficient, INFO)
+        USE ModuleThermo
+        USE ModuleGEMSolver
+        implicit none
+
+        integer, intent(in) :: iConstraint
+        real(8), intent(out) :: dCoefficient
+        integer, intent(out) :: INFO
+        integer :: i, k, nReal
+
+        INFO = 0
+        dCoefficient = 0D0
+
+        if (.NOT. allocated(iPhaseConstraintKind) .OR. .NOT. allocated(iPhaseConstraintID)) then
+            INFO = 1
+            return
+        end if
+        if ((iConstraint < 1) .OR. (iConstraint > nPhaseConstraints)) then
+            INFO = 1
+            return
+        end if
+
+        nReal = nElements - nChargedConstraints
+        if (nReal < 1) nReal = nElements
+        k = iPhaseConstraintID(iConstraint)
+
+        select case (iPhaseConstraintKind(iConstraint))
+        case (0)
+            call CompStoichSolnPhase(k)
+            do i = 1, nReal
+                dCoefficient = dCoefficient + dEffStoichSolnPhase(k,i)
+            end do
+        case (1)
+            do i = 1, nReal
+                dCoefficient = dCoefficient + dStoichSpecies(k,i)
+            end do
+        case default
+            INFO = 1
+            return
+        end select
+
+        if ((dCoefficient <= 0D0) .OR. (dCoefficient /= dCoefficient)) INFO = 1
+
+    end subroutine GetPhaseConstraintCoefficient
+
+
+    subroutine GetPhaseConstraintResult(iConstraint, dAchieved, dResidual, INFO)
+        USE ModuleThermo
+        implicit none
+
+        integer, intent(in) :: iConstraint
+        real(8), intent(out) :: dAchieved, dResidual
+        integer, intent(out) :: INFO
+        integer :: i, k, iSlot
+        real(8) :: dCoefficient, dTotal, dPhaseMoles
+
+        INFO = 0
+        dAchieved = 0D0
+        dResidual = 0D0
+
+        call GetPhaseConstraintTotalElementMoles(dTotal, INFO)
+        if (INFO /= 0) return
+        call GetPhaseConstraintCoefficient(iConstraint, dCoefficient, INFO)
+        if (INFO /= 0) return
+
+        k = iPhaseConstraintID(iConstraint)
+        iSlot = 0
+        if (iPhaseConstraintKind(iConstraint) == 0) then
+            do i = nElements - nSolnPhases + 1, nElements
+                if (iAssemblage(i) == -k) then
+                    iSlot = i
+                    exit
+                end if
+            end do
+        else
+            do i = 1, nConPhases
+                if (iAssemblage(i) == k) then
+                    iSlot = i
+                    exit
+                end if
+            end do
+        end if
+
+        dPhaseMoles = 0D0
+        if (iSlot > 0) dPhaseMoles = dMolesPhase(iSlot)
+        dAchieved = dPhaseMoles * dCoefficient / dTotal
+        dResidual = dAchieved - dPhaseConstraintTarget(iConstraint)
+
+    end subroutine GetPhaseConstraintResult
 
 
 

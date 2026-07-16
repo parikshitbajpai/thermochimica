@@ -46,8 +46,8 @@ subroutine CompFunctionNorm
 
     implicit none
 
-    integer :: i, j, k, l, c, cIdx, nReal
-    real(8) :: dNormComponent, dSumStoich, dTotalElems, dTemp
+    integer :: i, j, k, l, c, cIdx, nReal, infoConstraint
+    real(8) :: dNormComponent, dSumStoich, dTemp, dAchieved
 
     ! Initialize variables:
     dGEMFunctionNorm    = 0D0
@@ -121,14 +121,12 @@ subroutine CompFunctionNorm
                     end if
                 end do
                 if (cIdx > 0) then
-                    nReal = nElements - nChargedConstraints
-                    if (nReal < 1) nReal = nElements
-                    dSumStoich = 0D0
-                    do j = 1, nReal
-                        dSumStoich = dSumStoich + dStoichSpecies(k,j)
-                    end do
-                    dNormComponent = dNormComponent + dPhaseConstraintLambda(cIdx) * &
-                        (dSumStoich / DFLOAT(iParticlesPerMole(k)))
+                    call GetPhaseConstraintCoefficient(cIdx, dSumStoich, infoConstraint)
+                    if (infoConstraint == 0) then
+                        dNormComponent = dNormComponent + dPhaseConstraintLambda(cIdx) * dSumStoich
+                    else
+                        dGEMFunctionNorm = dGEMFunctionNorm + 1D0
+                    end if
                 end if
             end if
         end if
@@ -137,55 +135,13 @@ subroutine CompFunctionNorm
     end do
 
     if (nPhaseConstraints > 0) then
-        nReal = nElements - nChargedConstraints
-        if (nReal < 1) nReal = nElements
-        dTotalElems = 0D0
-        do i = 1, nReal
-            dTotalElems = dTotalElems + dMolesElement(i)
-        end do
-        if (dTotalElems <= 0D0) dTotalElems = 1D0
-
         do c = 1, nPhaseConstraints
-            dTemp = 0D0
-            if (iPhaseConstraintKind(c) == 0) then
-                k = iPhaseConstraintID(c)
-                call CompStoichSolnPhase(k)
-                dSumStoich = 0D0
-                do i = 1, nReal
-                    dSumStoich = dSumStoich + dEffStoichSolnPhase(k,i)
-                end do
-                l = 0
-                do i = nElements - nSolnPhases + 1, nElements
-                    if (iAssemblage(i) == -k) then
-                        l = i
-                        exit
-                    end if
-                end do
-                if (l > 0) then
-                    dTemp = dMolesPhase(l) * dSumStoich - dPhaseConstraintElemTarget(c)
-                else
-                    dTemp = -dPhaseConstraintElemTarget(c)
-                end if
+            call GetPhaseConstraintResult(c, dAchieved, dTemp, infoConstraint)
+            if (infoConstraint == 0) then
+                dGEMFunctionNorm = dGEMFunctionNorm + dTemp**2
             else
-                k = iPhaseConstraintID(c)
-                dSumStoich = 0D0
-                do i = 1, nReal
-                    dSumStoich = dSumStoich + dStoichSpecies(k,i)
-                end do
-                l = 0
-                do i = 1, nConPhases
-                    if (iAssemblage(i) == k) then
-                        l = i
-                        exit
-                    end if
-                end do
-                if (l > 0) then
-                    dTemp = dMolesPhase(l) * dSumStoich - dPhaseConstraintElemTarget(c)
-                else
-                    dTemp = -dPhaseConstraintElemTarget(c)
-                end if
+                dGEMFunctionNorm = dGEMFunctionNorm + 1D0
             end if
-            dGEMFunctionNorm = dGEMFunctionNorm + (dTemp / dTotalElems)**(2)
         end do
     end if
 
