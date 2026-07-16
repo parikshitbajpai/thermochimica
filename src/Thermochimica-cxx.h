@@ -120,7 +120,19 @@ namespace Thermochimica
   void setMassBalanceTolerance(double tolerance);
 
   // Phase fraction constraints
+  struct PhaseFractionConstraint
+  {
+    std::string phaseName;
+    double targetFraction = 0.0;
+    double achievedFraction = 0.0;
+    double residual = 0.0;
+    double lagrangeMultiplier = 0.0;
+  };
+
   int addPhaseFractionConstraint(const std::string &phaseName, double fraction);
   void clearPhaseConstraints();
+  std::size_t getNumberPhaseFractionConstraints();
+  std::pair<PhaseFractionConstraint, int>
+  getPhaseFractionConstraintAtIndex(std::size_t constraintIndex);
 
 }

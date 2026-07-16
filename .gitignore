@@ -45,6 +45,7 @@ test/*
 test/daily/*
 !test/daily/TestThermo91.F90
 !test/daily/TestThermo92.F90
+!test/daily/TestPhaseConstraintAPI.C
 # Ignore dynamic libraries
 *.dylib
 .libs

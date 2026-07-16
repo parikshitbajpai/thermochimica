@@ -1270,3 +1270,53 @@ subroutine ClearPhaseConstraintsISO() &
     return
 
 end subroutine ClearPhaseConstraintsISO
+
+subroutine GetNumberPhaseFractionConstraintsISO(nConstraints) &
+    bind(C, name="TCAPI_getNumberPhaseFractionConstraints")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModulePhaseConstraints, ONLY: nPhaseConstraints
+
+    implicit none
+
+    integer(C_INT), intent(out) :: nConstraints
+
+    nConstraints = nPhaseConstraints
+
+    return
+
+end subroutine GetNumberPhaseFractionConstraintsISO
+
+function GetPhaseFractionConstraintAtIndexISO(iConstraint, lcPhaseName, dTarget, dAchieved, &
+    dResidual, dLambda, INFO) result(cPhaseNamePtr) &
+    bind(C, name="TCAPI_getPhaseFractionConstraintAtIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModulePhaseConstraints
+
+    implicit none
+
+    integer(C_INT), intent(in) :: iConstraint
+    integer(C_INT), intent(out) :: lcPhaseName
+    real(C_DOUBLE), intent(out) :: dTarget, dAchieved, dResidual, dLambda
+    integer(C_INT), intent(out) :: INFO
+    type(C_PTR) :: cPhaseNamePtr
+    character(kind=C_CHAR), target, save :: cPhaseNameBuffer(25)
+    integer :: i
+
+    cPhaseNamePtr = C_NULL_PTR
+    cPhaseNameBuffer = C_NULL_CHAR
+    lcPhaseName = 0
+
+    call GetPhaseConstraintData(iConstraint, dTarget, dAchieved, dResidual, dLambda, INFO)
+    if (INFO /= 0) return
+
+    lcPhaseName = len_trim(cPhaseConstraintName(iConstraint))
+    do i = 1, lcPhaseName
+        cPhaseNameBuffer(i) = cPhaseConstraintName(iConstraint)(i:i)
+    end do
+    cPhaseNamePtr = c_loc(cPhaseNameBuffer(1))
+
+    return
+
+end function GetPhaseFractionConstraintAtIndexISO

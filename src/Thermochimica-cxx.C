@@ -3,6 +3,7 @@
 #include <math.h>
 #include <cstring>
 #include <map>
+#include <limits>
 #include <vector>
 #include "Thermochimica.h"
 #include "Thermochimica-cxx.h"
@@ -563,6 +564,36 @@ namespace Thermochimica
   void clearPhaseConstraints()
   {
     TCAPI_clearPhaseConstraints();
+  }
+
+  std::size_t getNumberPhaseFractionConstraints()
+  {
+    int nConstraints = 0;
+    TCAPI_getNumberPhaseFractionConstraints(&nConstraints);
+    return static_cast<std::size_t>(nConstraints);
+  }
+
+  std::pair<PhaseFractionConstraint, int>
+  getPhaseFractionConstraintAtIndex(std::size_t constraintIndex)
+  {
+    PhaseFractionConstraint constraint;
+    if (constraintIndex >= static_cast<std::size_t>(std::numeric_limits<int>::max()))
+      return {constraint, 1};
+
+    int fortranIndex = static_cast<int>(constraintIndex) + 1;
+    int phaseNameLength = 0;
+    int info = 0;
+    char *phaseName = TCAPI_getPhaseFractionConstraintAtIndex(&fortranIndex,
+                                                              &phaseNameLength,
+                                                              &constraint.targetFraction,
+                                                              &constraint.achievedFraction,
+                                                              &constraint.residual,
+                                                              &constraint.lagrangeMultiplier,
+                                                              &info);
+    if ((info == 0) && (phaseName != nullptr))
+      constraint.phaseName.assign(phaseName, phaseName + phaseNameLength);
+
+    return {constraint, info};
   }
 
 }

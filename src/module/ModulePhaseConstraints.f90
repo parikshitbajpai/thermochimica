@@ -14,6 +14,7 @@ module ModulePhaseConstraints
     SAVE
 
     integer :: nPhaseConstraints = 0
+    logical :: lPhaseConstraintResultsAvailable = .FALSE.
     character(25), allocatable :: cPhaseConstraintName(:)
     real(8), allocatable       :: dPhaseConstraintTarget(:)
     real(8), allocatable       :: dPhaseConstraintElemTarget(:)
@@ -54,6 +55,7 @@ contains
         if (allocated(lPhaseConstrainedCon)) deallocate(lPhaseConstrainedCon)
 
         nPhaseConstraints = 0
+        lPhaseConstraintResultsAvailable = .FALSE.
 
     end subroutine ClearPhaseConstraints
 
@@ -71,6 +73,8 @@ contains
 
         cName = NormalizePhaseConstraintName(cPhaseIn)
         if (len_trim(cName) == 0) return
+
+        lPhaseConstraintResultsAvailable = .FALSE.
 
         if (nPhaseConstraints > 0) then
             do i = 1, nPhaseConstraints
@@ -371,6 +375,49 @@ contains
         dResidual = dAchieved - dPhaseConstraintTarget(iConstraint)
 
     end subroutine GetPhaseConstraintResult
+
+
+    subroutine GetPhaseConstraintData(iConstraint, dTarget, dAchieved, dResidual, dLambda, INFO)
+        USE ModuleThermo, ONLY: dMolesPhase
+        USE ModuleThermoIO, ONLY: INFOThermo
+        implicit none
+
+        integer, intent(in) :: iConstraint
+        real(8), intent(out) :: dTarget, dAchieved, dResidual, dLambda
+        integer, intent(out) :: INFO
+        integer :: infoResult
+
+        INFO = 0
+        dTarget = 0D0
+        dAchieved = 0D0
+        dResidual = 0D0
+        dLambda = 0D0
+
+        if ((iConstraint < 1) .OR. (iConstraint > nPhaseConstraints)) then
+            INFO = 1
+            return
+        end if
+
+        if ((.NOT. lPhaseConstraintResultsAvailable) .OR. (INFOThermo /= 0) .OR. &
+            (.NOT. allocated(iPhaseConstraintKind)) .OR. &
+            (.NOT. allocated(iPhaseConstraintID)) .OR. (.NOT. allocated(dPhaseConstraintLambda)) .OR. &
+            (.NOT. allocated(dMolesPhase))) then
+            INFO = 2
+            return
+        end if
+
+        call GetPhaseConstraintResult(iConstraint, dAchieved, dResidual, infoResult)
+        if (infoResult /= 0) then
+            dAchieved = 0D0
+            dResidual = 0D0
+            INFO = 2
+            return
+        end if
+
+        dTarget = dPhaseConstraintTarget(iConstraint)
+        dLambda = dPhaseConstraintLambda(iConstraint)
+
+    end subroutine GetPhaseConstraintData
 
 
 

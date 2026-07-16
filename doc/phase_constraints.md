@@ -66,8 +66,15 @@ Constraint rows:
 - TCAPI supports programmatic add/clear:
   - addPhaseFractionConstraint(name, fraction)
   - clearPhaseConstraints()
+- TCAPI, C, and C++ callers can query the constraint count and retrieve each solved
+  constraint by index. TCAPI and C indices are one-based; C++ indices are zero-based.
+  Each result contains the phase name, target and achieved fractions, normalized
+  residual, and Lagrange multiplier.
 - The C and C++ add functions return status 1 for an empty name and status 2 for a
   non-finite or out-of-range fraction. Phase-name resolution remains a solve-time check.
+- Result queries return status 1 for an invalid index and status 2 when a successful
+  solved state is unavailable. The returned C name pointer is library-owned and remains
+  valid until the next phase-constraint name query.
 
 ## Output
 Successful JSON output includes a `phase constraints` object containing each requested

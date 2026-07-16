@@ -103,4 +103,6 @@ extern "C"
   // Phase fraction constraints
   void TCAPI_addPhaseFractionConstraint(const char *, std::size_t, const double *, int *);
   void TCAPI_clearPhaseConstraints();
+  void TCAPI_getNumberPhaseFractionConstraints(int *);
+  char *TCAPI_getPhaseFractionConstraintAtIndex(const int *, int *, double *, double *, double *, double *, int *);
 }

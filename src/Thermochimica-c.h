@@ -39,3 +39,5 @@ void SetMassBalanceTolerance(double);
 // Phase fraction constraints
 void AddPhaseFractionConstraint(const char *, double, int *);
 void ClearPhaseConstraints(void);
+void GetNumberPhaseFractionConstraints(int *);
+char *GetPhaseFractionConstraintAtIndex(const int *, int *, double *, double *, double *, double *, int *);

@@ -17,7 +17,7 @@ program TestThermo92
 
     integer :: i, kSoln, kCon, lSoln, lCon, nReal, infoConstraint
     real(8) :: totalElem, sumStoichSoln, sumStoichCon, fracSoln, fracCon
-    real(8) :: achievedConstraint, residualConstraint
+    real(8) :: targetConstraint, achievedConstraint, residualConstraint, lambdaConstraint
     logical :: pass
 
     pass = .TRUE.
@@ -114,12 +114,18 @@ program TestThermo92
         call Thermochimica
 
         if (INFOThermo /= 87) pass = .FALSE.
+        call GetPhaseConstraintData(1, targetConstraint, achievedConstraint, residualConstraint, &
+            lambdaConstraint, infoConstraint)
+        if (infoConstraint /= 2) pass = .FALSE.
     end if
 
     ! Case 3: Error recovery must rebuild solver/database state without losing constraints.
     if (pass) then
         call ResetThermoAllPreservePhaseConstraints
         INFOThermo = 0
+        call GetPhaseConstraintData(1, targetConstraint, achievedConstraint, residualConstraint, &
+            lambdaConstraint, infoConstraint)
+        if (infoConstraint /= 2) pass = .FALSE.
         call ParseCSDataFile(cThermoFileName)
 
         if (nPhaseConstraints /= 2) pass = .FALSE.
