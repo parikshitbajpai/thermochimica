@@ -35,3 +35,7 @@ std::string elementName(unsigned int atomic_number);
 
 void SetMinMoleFraction(double);
 void SetMassBalanceTolerance(double);
+
+// Phase fraction constraints
+void AddPhaseFractionConstraint(const char *, double, int *);
+void ClearPhaseConstraints(void);

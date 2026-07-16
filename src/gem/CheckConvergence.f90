@@ -133,9 +133,7 @@ subroutine CheckConvergence
     ! Test if the largest relative change in species mole fraction is large
     ! This is a self-consistency check
     if (lDebugMode) print *, "Test self-consistency ", dMaxSpeciesChange
-    if (dMaxSpeciesChange > LOG(2D0)) then
-        if (nPhaseConstraints <= 0) return
-    end if
+    if (dMaxSpeciesChange > LOG(2D0)) return
 
     ! TEST #1: Check if any of the phases in the assemblage are "dummy" phases:
     ! -------------------------------------------------------------------------
@@ -193,7 +191,7 @@ subroutine CheckConvergence
         nReal = nElements - nChargedConstraints
         if (nReal < 1) nReal = nElements
         dConstraintMax = 0D0
-        dConstraintTol = 1D-3
+        dConstraintTol = dTolerance(1)
         dTotalElems = 0D0
         do i = 1, nReal
             dTotalElems = dTotalElems + dMolesElement(i)
@@ -251,7 +249,28 @@ subroutine CheckConvergence
             dConstraintMax = MAX(dConstraintMax, DABS(dTemp) / dTotalElems)
         end do
 
-        if (dConstraintMax <= dConstraintTol) lConverged = .TRUE.
+        ! A constrained solution must satisfy the full functional/KKT norm as well as the
+        ! explicit phase-fraction residual. Stability checks for phases outside the fixed
+        ! constrained assemblage are intentionally not applied.
+        if (dConstraintMax > dConstraintTol) return
+        if (dGEMFunctionNorm > dTolerance(1)) return
+
+        ! Check site-fraction normalization for constrained sublattice phases.
+        LOOP_CONSTRAINT_TEST6: do j = 1, nSolnPhases
+            k = -iAssemblage(nElements - j + 1)
+            if ((cSolnPhaseType(k) == 'SUBL').OR.(cSolnPhaseType(k) == 'SUBLM')) then
+                l = iPhaseSublattice(k)
+                do i = 1, nSublatticePhase(l)
+                    dResidual = -1D0
+                    do c = 1, nConstituentSublattice(l,i)
+                        dResidual = dResidual + dSiteFraction(l,i,c)
+                    end do
+                    if (DABS(dResidual) > dTolerance(2)) return
+                end do
+            end if
+        end do LOOP_CONSTRAINT_TEST6
+
+        lConverged = .TRUE.
         return
     end if
 

@@ -318,10 +318,14 @@ subroutine InitGEMLineSearch(dStepLength,dMolesSpeciesLast,dElementPotentialLast
                 deallocate(dPhaseConstraintLambdaLast)
             end if
         end if
-        if (.NOT. allocated(dPhaseConstraintLambda)) allocate(dPhaseConstraintLambda(nPhaseConstraints))
-        if (.NOT. allocated(dPhaseConstraintLambdaLast)) allocate(dPhaseConstraintLambdaLast(nPhaseConstraints))
-        dPhaseConstraintLambda = 0D0
-        dPhaseConstraintLambdaLast = 0D0
+        if (.NOT. allocated(dPhaseConstraintLambda)) then
+            allocate(dPhaseConstraintLambda(nPhaseConstraints))
+            dPhaseConstraintLambda = 0D0
+        end if
+        if (.NOT. allocated(dPhaseConstraintLambdaLast)) then
+            allocate(dPhaseConstraintLambdaLast(nPhaseConstraints))
+            dPhaseConstraintLambdaLast = 0D0
+        end if
     end if
 
     ! Count the number of stable miscible phases:

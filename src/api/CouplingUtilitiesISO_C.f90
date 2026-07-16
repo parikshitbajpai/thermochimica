@@ -1241,6 +1241,15 @@ subroutine AddPhaseFractionConstraintISO(cPhaseName, lcPhaseName, dFraction, INF
     real(C_DOUBLE), intent(in)                       :: dFraction
     integer(C_INT), intent(out)                      :: INFO
 
+    if (lcPhaseName == 0) then
+        INFO = 1
+        return
+    end if
+    if ((dFraction /= dFraction) .OR. (dFraction < 0D0) .OR. (dFraction > 1D0)) then
+        INFO = 2
+        return
+    end if
+
     call c_f_pointer(cptr=c_loc(cPhaseName), fptr=fPhaseName)
     call AddPhaseFractionConstraint(fPhaseName, dFraction)
     INFO = 0

@@ -303,7 +303,7 @@ subroutine GEMNewton(INFO)
                         do i = 1, nReal
                             dSumStoich = dSumStoich + dStoichSpecies(iAssemblage(k),i)
                         end do
-                        dScoeff = dSumStoich / DFLOAT(iParticlesPerMole(iAssemblage(k)))
+                        dScoeff = dSumStoich
                         A(idxLambda, j) = dScoeff
                         A(j, idxLambda) = A(idxLambda, j)
                     end if

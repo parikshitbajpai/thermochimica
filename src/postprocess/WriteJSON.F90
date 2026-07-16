@@ -10,6 +10,7 @@ subroutine WriteJSON(append)
     logical :: exist
     integer :: i, c, nElectron, its
     character(:), allocatable :: cOutputFullPath
+    character(256) :: cInfoMessage
 
     cOutputFullPath = GetResolvedOutputFilePath()
 
@@ -27,11 +28,8 @@ subroutine WriteJSON(append)
     ! Only proceed for a successful calculation:
     if (INFOThermo /= 0) then
         write(1,*) '  "info": ', INFOThermo, ','
-        if (INFOThermo == 85) then
-            write(1,*) '  "info message": "Phase constraints: solver failed to satisfy constraints."'
-        else
-            write(1,*) '  "info message": "Thermochimica error; see INFOThermo for details."'
-        end if
+        call GetINFOThermoMessage(cInfoMessage)
+        write(1,*) '  "info message": "', trim(cInfoMessage), '"'
         write(1,*) '}'
         close (1)
         return

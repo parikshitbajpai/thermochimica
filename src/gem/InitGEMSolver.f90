@@ -192,13 +192,19 @@ subroutine InitGEMSolver
     if (nPhaseConstraints > 0) then
         call ResolvePhaseConstraints(infoConstraints)
         if (infoConstraints /= 0) then
-            INFOThermo = 80
+            if (infoConstraints == 2) then
+                INFOThermo = 86
+            else
+                INFOThermo = 80
+            end if
             return
         end if
         call ValidatePhaseConstraints(infoConstraints)
         if (infoConstraints /= 0) then
             if (infoConstraints == 4) then
                 INFOThermo = 84
+            elseif (infoConstraints == 5) then
+                INFOThermo = 87
             else
                 INFOThermo = 81
             end if

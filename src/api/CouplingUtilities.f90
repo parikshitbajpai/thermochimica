@@ -304,6 +304,10 @@ subroutine GetINFOThermoMessage(cMessage)
     cMessage = 'Phase constraints: too many constrained phases for Gibbs phase rule.'
   case (85)
     cMessage = 'Phase constraints: solver failed to satisfy constraints.'
+  case (86)
+    cMessage = 'Phase constraints: duplicate phase constraints detected.'
+  case (87)
+    cMessage = 'Phase constraints: fractions must be between 0 and 1.'
   case default
     cMessage = 'Thermochimica error; see INFOThermo for details.'
   end select

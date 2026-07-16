@@ -175,6 +175,10 @@ subroutine ThermoDEBUG
         print *, 'DEBUG: Phase constraints: too many constrained phases for Gibbs phase rule.'
     elseif (INFOThermo == 85) then
         print *, 'DEBUG: Phase constraints: solver failed to satisfy constraints.'
+    elseif (INFOThermo == 86) then
+        print *, 'DEBUG: Phase constraints: duplicate phase constraints detected.'
+    elseif (INFOThermo == 87) then
+        print *, 'DEBUG: Phase constraints: fractions must be between 0 and 1.'
     elseif (INFOThermo == 99) then
         print *, 'DEBUG: The input element masses are not representable in terms of the available species.'
         ! Check CompThermoData.f90

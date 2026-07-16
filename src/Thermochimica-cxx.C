@@ -553,10 +553,11 @@ namespace Thermochimica
   }
 
   // Phase fraction constraints
-  void addPhaseFractionConstraint(const std::string &phaseName, double fraction)
+  int addPhaseFractionConstraint(const std::string &phaseName, double fraction)
   {
     int info = 0;
     TCAPI_addPhaseFractionConstraint(phaseName.c_str(), phaseName.length(), &fraction, &info);
+    return info;
   }
 
   void clearPhaseConstraints()

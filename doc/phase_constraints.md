@@ -1,4 +1,4 @@
-# Phase Fraction Constraints Design (Work-In-Progress)
+# Phase Fraction Constraints
 
 ## Goal
 Add hard phase-fraction constraints (mole-based, element-moles definition) to Thermochimica. When constraints are active, only constrained phases are allowed to be stable and their fractions must sum to 1.0. When no constraints are specified, behavior must remain unchanged.
@@ -20,17 +20,7 @@ For constrained phase p with target fraction f_p:
 Constraint equation:
   dMolesPhase(p) * S_p = f_p * T
 
-## Implementation Phases
-
-### Phase A: Penalty Method (fast path)
-- Add constraint residuals to the functional norm:
-  - g_p = dMolesPhase(p) * S_p - target_p
-  - dGEMFunctionNorm += w_penalty * g_p^2
-- Add penalty “force” to GEMNewton RHS rows for phase-moles:
-  - B(row_p) += 2 * w_penalty * S_p * g_p
-- No change to matrix size or unknown count.
-
-### Phase B: Hard Constraints (KKT / Lagrange multipliers)
+## Hard Constraints (KKT / Lagrange Multipliers)
 Expand Newton system with Lagrange multipliers for constraints:
 
 Unknown vector:
@@ -55,10 +45,20 @@ Constraint rows:
   - Only constrained phases are allowed to be stable.
   - The phase assemblage is fixed to those phases.
   - Add/remove/swap logic is disabled.
+  - This is a complete fixed-assemblage partition. Partial constraints that leave an
+    unconstrained equilibrium remainder are not currently supported.
 - Validation:
   - Sum of fractions must equal 1.0 (within tolerance).
-  - Count of constrained phases <= nElements.
+  - Each fraction must be between 0 and 1.
+  - Count of constrained phases <= the number of non-charge element constraints.
   - All phase names must resolve.
+
+## Lifetime and Reset Behavior
+- `ResetThermo` preserves phase constraints for repeated calculations and sweeps.
+- `ResetThermoAllPreservePhaseConstraints` rebuilds solver, parser, reinit, and CTZ
+  state while retaining the requested constraints. Sweep drivers use this after a
+  failed calculation.
+- `ResetThermoAll` clears phase constraints along with all other state.
 
 ## Input + API
 - Input scripts and run lists support:
@@ -66,6 +66,8 @@ Constraint rows:
 - TCAPI supports programmatic add/clear:
   - addPhaseFractionConstraint(name, fraction)
   - clearPhaseConstraints()
+- The C and C++ add functions return status 1 for an empty name and status 2 for a
+  non-finite or out-of-range fraction. Phase-name resolution remains a solve-time check.
 
 ## Key Code Touch Points
 - New module: src/module/ModulePhaseConstraints.f90
@@ -74,8 +76,7 @@ Constraint rows:
   - src/gem/InitGEMSolver.f90
   - src/gem/GEMNewton.f90
   - src/gem/CompFunctionNorm.f90
-  - src/gem/GEMLineSearch.f90 (ignore lambda tail in Phase B)
+  - src/gem/GEMLineSearch.f90
 - Assemblage control: src/gem/CheckPhaseAssemblage.f90 and phase add/remove/swap helpers
-- Reset: src/reset/ResetThermo.f90
+- Reset: src/reset/ResetThermoAll.f90
 - TCAPI: src/api/CouplingUtilities.f90, src/Thermochimica.h, src/Thermochimica-c.C, src/Thermochimica-cxx.*
-

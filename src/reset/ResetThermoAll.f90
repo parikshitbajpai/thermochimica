@@ -31,6 +31,18 @@ subroutine ResetThermoAll
 
     USE ModulePhaseConstraints
 
+    call ResetThermoAllPreservePhaseConstraints
+
+    ! Clear user-specified phase constraints:
+    call ClearPhaseConstraints
+
+    return
+
+end subroutine ResetThermoAll
+
+
+subroutine ResetThermoAllPreservePhaseConstraints
+
     ! Reset thermochimica:
     call ResetThermo
 
@@ -43,9 +55,6 @@ subroutine ResetThermoAll
     ! Reset CTZ data:
     call ResetCTZ
 
-    ! Clear phase constraints:
-    call ClearPhaseConstraints
-
     return
 
-end subroutine ResetThermoAll
+end subroutine ResetThermoAllPreservePhaseConstraints

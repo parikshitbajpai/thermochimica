@@ -14,8 +14,6 @@ module ModulePhaseConstraints
     SAVE
 
     integer :: nPhaseConstraints = 0
-    real(8) :: dPhaseConstraintPenalty = 1D4
-
     character(25), allocatable :: cPhaseConstraintName(:)
     real(8), allocatable       :: dPhaseConstraintTarget(:)
     real(8), allocatable       :: dPhaseConstraintElemTarget(:)
@@ -28,6 +26,19 @@ module ModulePhaseConstraints
     logical, allocatable       :: lPhaseConstrainedCon(:)   ! size nSpecies (pure condensed subset)
 
 contains
+
+    pure function NormalizePhaseConstraintName(cPhaseIn) result(cNameOut)
+        implicit none
+
+        character(*), intent(in) :: cPhaseIn
+        character(25)            :: cNameOut
+
+        cNameOut = ''
+        if (len_trim(cPhaseIn) > 0) then
+            cNameOut = trim(adjustl(cPhaseIn(1:min(25,len_trim(cPhaseIn)))))
+        end if
+    end function NormalizePhaseConstraintName
+
 
     subroutine ClearPhaseConstraints()
         implicit none
@@ -54,10 +65,21 @@ contains
         real(8), intent(in)       :: dFractionIn
 
         integer :: nNew, i
+        character(25) :: cName
         character(25), allocatable :: cNamesNew(:)
         real(8), allocatable       :: dTargetsNew(:)
 
-        if (len_trim(cPhaseIn) == 0) return
+        cName = NormalizePhaseConstraintName(cPhaseIn)
+        if (len_trim(cName) == 0) return
+
+        if (nPhaseConstraints > 0) then
+            do i = 1, nPhaseConstraints
+                if (cPhaseConstraintName(i) == cName) then
+                    dPhaseConstraintTarget(i) = dFractionIn
+                    return
+                end if
+            end do
+        end if
 
         nNew = nPhaseConstraints + 1
 
@@ -74,7 +96,7 @@ contains
             end do
         end if
 
-        cNamesNew(nNew) = trim(adjustl(cPhaseIn(1:min(25,len_trim(cPhaseIn)))))
+        cNamesNew(nNew) = cName
         dTargetsNew(nNew) = dFractionIn
 
         if (allocated(cPhaseConstraintName)) deallocate(cPhaseConstraintName)
@@ -95,6 +117,7 @@ contains
         integer, intent(out) :: INFO
         integer :: i, j, k
         character(25) :: cSearch
+        character(25) :: cCandidate
         logical :: lFound
 
         INFO = 0
@@ -120,12 +143,13 @@ contains
         lPhaseConstrainedCon = .FALSE.
 
         do i = 1, nPhaseConstraints
-            cSearch = trim(adjustl(cPhaseConstraintName(i)))
+            cSearch = NormalizePhaseConstraintName(cPhaseConstraintName(i))
             lFound = .FALSE.
 
             ! Check solution phases first
             do j = 1, nSolnPhasesSys
-                if (trim(adjustl(cSolnPhaseName(j))) == cSearch) then
+                cCandidate = NormalizePhaseConstraintName(cSolnPhaseName(j))
+                if (cCandidate == cSearch) then
                     iPhaseConstraintKind(i) = 0
                     iPhaseConstraintID(i) = j
                     lPhaseConstrainedSoln(j) = .TRUE.
@@ -138,7 +162,8 @@ contains
             if (.NOT. lFound) then
                 do k = 1, nSpecies
                     if (iPhase(k) == 0) then
-                        if (trim(adjustl(cSpeciesName(k))) == cSearch) then
+                        cCandidate = NormalizePhaseConstraintName(cSpeciesName(k))
+                        if (cCandidate == cSearch) then
                             iPhaseConstraintKind(i) = 1
                             iPhaseConstraintID(i) = k
                             lPhaseConstrainedCon(k) = .TRUE.
@@ -188,6 +213,10 @@ contains
         do j = 1, nRealElements
             dTotal = dTotal + dMolesElement(j)
         end do
+        if ((dTotal <= 0D0) .OR. (dTotal /= dTotal)) then
+            INFO = 1
+            return
+        end if
 
         if (allocated(dPhaseConstraintElemTarget)) deallocate(dPhaseConstraintElemTarget)
         allocate(dPhaseConstraintElemTarget(nPhaseConstraints))
@@ -204,24 +233,35 @@ contains
         implicit none
 
         integer, intent(out) :: INFO
-        integer :: i
-        real(8) :: dSum
+        integer :: i, nReal
+        real(8) :: dSum, dTol
 
         INFO = 0
 
         if (nPhaseConstraints <= 0) return
 
-        if (nPhaseConstraints > nElements) then
+        nReal = nElements - nChargedConstraints
+        if (nReal < 1) nReal = nElements
+        if (nPhaseConstraints > nReal) then
             INFO = 4
             return
         end if
 
+        dTol = 1D-6
         dSum = 0D0
         do i = 1, nPhaseConstraints
+            if (dPhaseConstraintTarget(i) /= dPhaseConstraintTarget(i)) then
+                INFO = 5
+                return
+            end if
+            if ((dPhaseConstraintTarget(i) < 0D0) .OR. (dPhaseConstraintTarget(i) > 1D0)) then
+                INFO = 5
+                return
+            end if
             dSum = dSum + dPhaseConstraintTarget(i)
         end do
 
-        if (DABS(dSum - 1D0) > 1D-6) then
+        if (DABS(dSum - 1D0) > dTol) then
             INFO = 3
             return
         end if
