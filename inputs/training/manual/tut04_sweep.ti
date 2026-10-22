@@ -1,0 +1,22 @@
+! =============================================================================
+! Tutorial Problem #4 (manual), sweep variant: Al-Mg solidus
+! =============================================================================
+! Same alloy as tut04_AlMg_alloy_solidus.ti, swept 550-650 C in 10 C steps,
+! to locate the solidus directly in one run.
+!
+! Run:    ./bin/InputScriptMode inputs/training/manual/tut04_sweep.ti
+! Verified: single-phase FCC_A1 below 620 C; a Liquid phase appears at and
+! above 625 C (bracket search). The manual reports a solidus of 620 C.
+! =============================================================================
+temperature       = 550:650:10
+pressure          = 1.0
+mass(13)          = 3.6135
+mass(12)          = 0.10286
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/AlMg-Liang.dat
+print mode        = 1
+write json        = .TRUE.
+output            = tut04_AlMg_sweep
+reinit            = .TRUE.

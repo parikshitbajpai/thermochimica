@@ -1,0 +1,28 @@
+! =============================================================================
+! Tutorial Problem #3 (manual): Cesium Iodide Scintillator
+! =============================================================================
+! System: Cs-I. 1 mol Cs, 1 mol I, 1E-5 atm (partial vacuum), 400 C.
+! Teaching point: CsI stays solid at 400 C under partial vacuum, even though
+! the melting point at atmospheric pressure is much higher -- sublimation
+! becomes the limiting process at reduced pressure, not melting.
+!
+! Note on database: the manual uses an export-controlled CsI.dat; this file
+! uses data/CsI-Pham.dat instead, which covers the same Cs-I system from a
+! different parameterization, so absolute numbers differ slightly from the
+! manual's listing (same physics, different source database).
+!
+! Run:    ./bin/InputScriptMode inputs/training/manual/tut03_CsI_scintillator.ti
+! Verified output: 1.0000 mol CsI_csi_b2(s), no gas phase stable.
+! Sweep temperature (see tut03_sweep variant below, or edit this file) to find
+! the sublimation point: with this database, the solid-only -> gas-containing
+! transition at 1E-5 atm falls between 550 C and 570 C.
+! =============================================================================
+temperature       = 400
+pressure          = 1.0E-5
+mass(55)          = 1.0
+mass(53)          = 1.0
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/CsI-Pham.dat
+print mode        = 2

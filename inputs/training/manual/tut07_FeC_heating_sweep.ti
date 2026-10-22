@@ -1,0 +1,27 @@
+! =============================================================================
+! Tutorial Problem #7 (manual): Post-processing of Heating Steel
+! =============================================================================
+! System: Fe-0.15wt%C steel. Swept 500-1700 C in 50 C steps, 1 atm.
+! Teaching point: produce a plot of phase fractions against temperature by
+! post-processing a temperature sweep's JSON output in an external tool.
+!
+! Run:    ./bin/InputScriptMode inputs/training/manual/tut07_FeC_heating_sweep.ti
+! Verified phase transitions (matching the manual's Figure 4):
+!   BCC_A2 (+ C_GRAPHITE) stable below ~700 C
+!   BCC_A2 -> FCC_A1 transition between 700 C and 850 C (manual: 738 C)
+!   FCC_A1 single phase from ~900 C to 1450 C
+!   FCC_A1 -> Liquid transition between 1450 C and 1550 C (manual: ~1493 C)
+! See inputs/training/manual/plot_tut07.py to render this as a chart.
+! =============================================================================
+temperature       = 500:1700:50
+pressure          = 1.0
+mass(26)          = 1.787985
+mass(6)           = 0.012489
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/CuFeC-Kang.dat
+print mode        = 1
+write json        = .TRUE.
+output            = tut07_FeC_heating
+reinit            = .TRUE.

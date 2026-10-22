@@ -1,0 +1,23 @@
+! =============================================================================
+! Tutorial Problem #3 (manual), sweep variant: CsI sublimation point
+! =============================================================================
+! Same system as tut03_CsI_scintillator.ti, swept 400-600 C in 10 C steps at
+! 1E-5 atm, to show the sublimation point directly in one run instead of a
+! manual bracket search.
+!
+! Run:    ./bin/InputScriptMode inputs/training/manual/tut03_CsI_sweep.ti
+! Verified: solid-only below ~550 C; gas phase appears and grows above it,
+! reaching 0.993 mol gas_ideal by 600 C.
+! =============================================================================
+temperature       = 400:600:10
+pressure          = 1.0E-5
+mass(55)          = 1.0
+mass(53)          = 1.0
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/CsI-Pham.dat
+print mode        = 1
+write json        = .TRUE.
+output            = tut03_CsI_sweep
+reinit            = .TRUE.

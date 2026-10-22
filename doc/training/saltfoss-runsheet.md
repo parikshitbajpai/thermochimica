@@ -241,3 +241,39 @@ not have this problem.
    through live.
 3. Show the corresponding PNG in `doc/training/figures/` and keep talking — the
    numbers are the same ones you'd get from a working run.
+
+---
+
+## Appendix — optional liquidus demos (not in the 60-minute script)
+
+These two demos are adapted from the official Thermochimica tutorial manual
+(Piro and Poschmann, Ontario Tech University) and cover a topic the scripted
+hour does not: **liquidus temperature**, i.e. where a salt is fully molten
+versus partly solid. Use them only if time remains, or as follow-up material
+for a second meeting — they are not timed into the 0:00–1:00 script above.
+
+```bash
+./bin/InputScriptMode inputs/training/saltfoss/06_flinak_eutectic.ti   # FLiNaK, 440 C
+./bin/InputScriptMode inputs/training/saltfoss/07_flibe_liquidus_A.ti  # 74-17-9 FLiBe-UF4, 450 C
+./bin/InputScriptMode inputs/training/saltfoss/07_flibe_liquidus_B.ti  # 72-16-12 FLiBe-UF4, 450 C
+```
+
+**FLiNaK (46.5 LiF - 11.5 NaF - 42 KF mol%):** at 440 °C the melt is still
+partly solid (two fluorite-type FM3M phases plus solid NaF). Sweeping
+temperature (`06_flinak_sweep.ti`) brackets the eutectic melting point
+between 459 °C and 459.5 °C with the MSTDB V4.1 database in this repo —
+close to, but not identical to, the manual's reported ~470 °C, which used an
+older, export-controlled database version.
+
+**FLiBe with increasing UF4 loading:** composition A (74 LiF-17 BeF2-9 UF4)
+is still partly solid at 450 °C; composition B (72 LiF-16 BeF2-12 UF4, more
+fuel) is already fully liquid at the same temperature. Bracket search shows
+the liquidus falls from 555–560 °C (A) to 495–498 °C (B) — raising the
+uranium loading lowers the liquidus, the same direction the manual reports
+(550 °C → 480 °C with its database version). This is useful groundwork for
+a reactor design conversation: how much fuel can go into the salt before
+the liquidus creeps toward the operating temperature.
+
+See `doc/training/manual-tutorials.md` for the full manual-to-input-file
+mapping, including five other tutorials (H-O, Al-Mg, Fe-Cu-C, Zr-H, noble
+metals) reproduced exactly against this checkout's databases.

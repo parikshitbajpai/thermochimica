@@ -1,0 +1,20 @@
+! =============================================================================
+! Tutorial Problem #1 (manual): Verifying Equilibrium Gas Constants
+! =============================================================================
+! System: H-O. 2 mol H, 1 mol O, 1000 K, 1 atm, ideal gas only.
+! Teaching point: Thermochimica's output reproduces the classical equilibrium
+! constant K for H2O <=> H2 + 0.5 O2, computed from the 1909 NBS/NIST value.
+!
+! Run:    ./bin/InputScriptMode inputs/training/manual/tut01_HO_equilibrium_constant.ti
+! Verified output: x(H2O)=1.00000, x(H2)=2.4818E-07, x(O2)=1.2149E-07
+!   K = x(H2O) / (x(H2)*x(O2)^0.5) = 1.156e10, vs. reference 1.151e10 (NBS/NIST)
+! =============================================================================
+temperature       = 1000
+pressure          = 1.0
+mass(1)           = 2.0
+mass(8)           = 1.0
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/HO.dat
+print mode        = 2

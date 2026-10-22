@@ -1,0 +1,21 @@
+! =============================================================================
+! Tutorial Problem #6 (manual): Zirconium Hydriding
+! =============================================================================
+! System: Zr-H. 1 mol Zr, 0.05 mol H, 700 K, 1 atm.
+! Teaching point: the solubility limit of hydrogen in alpha-Zr (HCP), read
+! directly from the composition of the stable ZRH sublattice phase.
+!
+! Run:    ./bin/InputScriptMode inputs/training/manual/tut06_ZrH_solubility.ti
+! Verified output: 0.98067 mol ZRH {H site fraction 2.2476E-02} +
+!   1.9325E-02 mol ZRH2_DELTA. The H/Zr ratio in the ZRH phase is 0.0225,
+!   matching Figure 3 of the manual (Dupin et al., J. Nucl. Mater. 275, 1999).
+! =============================================================================
+temperature       = 700
+pressure          = 1.0
+mass(1)           = 0.05
+mass(40)          = 1.0
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/ZrH-Dupin.dat
+print mode        = 2

@@ -1,0 +1,28 @@
+! =============================================================================
+! Manual Tutorial Problem #12, adapted (A): FLiBe liquidus, 9 mol% UF4
+! =============================================================================
+! Composition A: 74 LiF - 17 BeF2 - 9 UF4 (mol%), converted to elements:
+! Li=74, Be=17, U=9, F=144 mol (F = LiF + 2*BeF2 + 4*UF4).
+!
+! Note on database: the manual uses the export-controlled MSAR_Ver_1.dat.
+! This file uses the MSTDB V4.1 fluoride database already in data/, which
+! covers the same Li-Be-U-F system under a newer parameterization.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/07_flibe_liquidus_A.ti
+! Verified output at 450 C: 169.47 mol MSFL liquid + 12.760 mol solid LiF --
+! below the liquidus. Sweep temperature (07_flibe_liquidus_sweep.ti) to find
+! it: the solid LiF disappears between 555 C and 560 C with this database.
+! Compare against 07_flibe_liquidus_B.ti (12 mol% UF4) to see the liquidus
+! drop with increased fuel loading -- the manual's point #10 teaching goal.
+! =============================================================================
+temperature       = 450
+pressure          = 1.0
+mass(3)           = 74.0
+mass(4)           = 17.0
+mass(92)          = 9.0
+mass(9)           = 144.0
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

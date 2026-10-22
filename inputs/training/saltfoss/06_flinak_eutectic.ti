@@ -1,0 +1,32 @@
+! =============================================================================
+! Manual Tutorial Problem #11, adapted: FLiNaK eutectic temperature
+! =============================================================================
+! FLiNaK is the ternary eutectic 46.5 LiF - 11.5 NaF - 42 KF (mol%), widely
+! considered as an MSR coolant/carrier salt for its low melting point.
+! Composition converted to elements: Li=46.5, Na=11.5, K=42.0, F=100.0 mol.
+!
+! Note on database: the manual's Tutorial #11 uses the export-controlled
+! MSAR_Ver_1.dat (request access from the MSTDB maintainers; see the manual's
+! Table 10). This file instead uses the MSTDB V4.1 fluoride database already
+! in data/, which contains the same Li-Na-K-F system under a newer
+! parameterization -- numbers differ slightly from the manual's listing
+! (database version, not a different system).
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/06_flinak_eutectic.ti
+! Verified output at 440 C: two solid FM3M (LiF-rich, KF-rich) fluorite-type
+! phases plus solid NaF -- i.e. still below the eutectic. Sweep temperature
+! (see 06_flinak_sweep.ti) to find the melting point: with this database, the
+! transition to a single MSFL liquid falls between 459 C and 459.5 C. The
+! manual reports ~470 C with the older database version.
+! =============================================================================
+temperature       = 440
+pressure          = 1.0
+mass(3)           = 46.5
+mass(11)          = 11.5
+mass(19)          = 42.0
+mass(9)           = 100.0
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

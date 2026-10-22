@@ -1,0 +1,30 @@
+! =============================================================================
+! Tutorial Problem #10 (manual): Plating Out of Noble Metals in the MSRE
+! =============================================================================
+! System: Mo-Pd-Ru-Rh-Tc. 434 C, 1 atm. Masses converted from the manual's
+! gram values (7.7 g Mo, 5.4 g Pd, 6.6 g Ru, 0.51 g Rh, 1.3 g Tc) to moles.
+! Teaching point: predict which phases noble-metal fission products form on
+! a heat exchanger surface, given a known bulk composition, temperature, and
+! pressure -- directly relevant to corrosion/heat-transfer analysis of plated
+! deposits.
+!
+! Run:    ./bin/InputScriptMode inputs/training/manual/tut10_noble_metal_plating.ti
+! Verified output (matches the manual's Table 9 distribution):
+!   two miscible HCPN phases (one Ru/Mo-rich, one Tc/Rh-rich), a Mo-rich BCCN
+!   phase, and the stoichiometric compound Pd11Mo9_s1(s).
+!   Pd: 98.7% in Pd11Mo9_s1(s), negligible elsewhere.
+!   Ru: 99.2% in the Ru/Mo-rich HCPN phase.
+!   Rh: 86.6% in the Tc/Rh-rich HCPN phase.
+! =============================================================================
+temperature       = 434
+pressure          = 1.0
+mass(42)          = 0.080242
+mass(45)          = 0.004956
+mass(43)          = 0.013265
+mass(44)          = 0.065301
+mass(46)          = 0.050742
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MoPdRuRhTc-Kaye.dat
+print mode        = 2

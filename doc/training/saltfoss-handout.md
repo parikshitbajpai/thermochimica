@@ -116,6 +116,11 @@ training uses `bin/InputScriptMode`, which does not have this problem.
   `reinit = .TRUE.`, and the basis for the MOOSE coupling in the second session).
 - `python/thermoTools.py` — programmatic `.ti` generation and JSON plotting (for
   simple, non-MQMQA phases).
+- `doc/training/manual-tutorials.md` — the official Thermochimica tutorial manual's
+  twelve worked problems, each mapped to a runnable input file on this checkout
+  (H-O, CsI, Al-Mg, Fe-Cu-C, Zr-H, Fe-C heating, noble metal plating, FLiNaK, and
+  FLiBe liquidus), including two liquidus demos (`inputs/training/saltfoss/06_*`,
+  `07_*`) not covered in the scripted hour.
 - Second training session: MOOSE coupling — the C/C++ API (`Thermochimica.h`,
   `Thermochimica-cxx.h`), the reinitialization mechanism that makes per-timestep,
   per-integration-point calls affordable, and how the redox/corrosion quantities from

@@ -1,0 +1,30 @@
+! =============================================================================
+! Tutorial Problem #5 (manual): Steelmaking with Ferrous Scrap Metal, step 0
+! =============================================================================
+! System: Fe-Cu-C. 87 mol Fe, 13 mol Cu, 1.5 mol C, 1380 C, 1 atm.
+! Teaching point: selective melting. Heat a solid-liquid mixture above the
+! solidus but below the liquidus, pour off the liquid (which concentrates
+! Cu and C), and the remaining solid is enriched in Fe.
+!
+! This is step 0 of an 11-step procedure. To run subsequent steps by hand:
+! read the Fe, Cu, and C content of the stable FCC_A1 (solid) phase from
+! this step's output, use those three numbers as the next step's mass(26),
+! mass(29), mass(6), and raise the temperature by 10 C. Repeat.
+!
+! A ready-to-run script that automates all 11 steps and reports the Fe
+! purification trend is at inputs/training/manual/run_tut05_selective_melting.py.
+!
+! Run:    ./bin/InputScriptMode inputs/training/manual/tut05_steelmaking_step00.ti
+! Verified output: 94.674 mol FCC_A1 (Fe 88.96 wt%, Cu 9.53 at%, C 1.50 at%)
+!   + 12.553 mol Liquid.
+! =============================================================================
+temperature       = 1380
+pressure          = 1.0
+mass(26)          = 87
+mass(29)          = 13
+mass(6)           = 1.5
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/CuFeC-Kang.dat
+print mode        = 2

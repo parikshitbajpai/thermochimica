@@ -1,0 +1,24 @@
+! =============================================================================
+! Manual Tutorial Problem #11, adapted: FLiNaK eutectic temperature, sweep
+! =============================================================================
+! Same composition as 06_flinak_eutectic.ti, swept 440-470 C in 2 C steps to
+! bracket the melting point directly in one run.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/06_flinak_sweep.ti
+! Verified: last solid-bearing point at 458 C; fully liquid (single MSFL
+! phase) from 460 C onward, with this database version.
+! =============================================================================
+temperature       = 440:470:2
+pressure          = 1.0
+mass(3)           = 46.5
+mass(11)          = 11.5
+mass(19)          = 42.0
+mass(9)           = 100.0
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 1
+write json        = .TRUE.
+output            = flinak_sweep
+reinit            = .TRUE.

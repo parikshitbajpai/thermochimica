@@ -1,0 +1,23 @@
+! =============================================================================
+! Tutorial Problem #4 (manual): Aluminum-Magnesium Alloys
+! =============================================================================
+! System: Al-Mg, Alloy 5252 (Al-2.5wt%Mg), 550 C, 1 atm.
+! Teaching point: determine the solidus (onset melting) temperature of an
+! alloy without reading it off a binary phase diagram -- useful once the
+! system has more components than a diagram can show.
+!
+! Run:    ./bin/InputScriptMode inputs/training/manual/tut04_AlMg_alloy_solidus.ti
+! Verified output: 3.7164 mol FCC_A1 (single phase, no liquid) at 550 C.
+! Sweep temperature upward (see tut04_sweep.ti) to find the solidus: a second
+! phase (Liquid) first appears between 620 C and 625 C, matching the manual's
+! reported solidus of 620 C.
+! =============================================================================
+temperature       = 550
+pressure          = 1.0
+mass(13)          = 3.6135
+mass(12)          = 0.10286
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/AlMg-Liang.dat
+print mode        = 2

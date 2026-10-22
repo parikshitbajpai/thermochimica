@@ -1,0 +1,26 @@
+! =============================================================================
+! Manual Tutorial Problem #12, adapted (B): FLiBe liquidus, 12 mol% UF4
+! =============================================================================
+! Composition B: 72 LiF - 16 BeF2 - 12 UF4 (mol%), the manual's
+! increased-fuel-loading case, converted to elements: Li=72, Be=16, U=12,
+! F=152 mol.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/07_flibe_liquidus_B.ti
+! Verified output at 450 C: single MSFL liquid, no solid -- already above
+! the liquidus here (unlike composition A at the same temperature). Bracket
+! search shows the liquidus for B falls between 495 C and 498 C, against
+! 555-560 C for composition A: a higher UF4 loading LOWERS the liquidus with
+! this database, matching the manual's directional claim (manual reports a
+! drop from 550 C to 480 C with the older database version).
+! =============================================================================
+temperature       = 450
+pressure          = 1.0
+mass(3)           = 72.0
+mass(4)           = 16.0
+mass(92)          = 12.0
+mass(9)           = 152.0
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

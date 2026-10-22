@@ -1,0 +1,25 @@
+! =============================================================================
+! Manual Tutorial Problem #12, adapted: FLiBe liquidus sweep, composition A
+! =============================================================================
+! Same composition as 07_flibe_liquidus_A.ti (74 LiF - 17 BeF2 - 9 UF4),
+! swept 450-600 C in 10 C steps to bracket the liquidus directly.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/07_flibe_liquidus_sweep.ti
+! Verified: solid LiF present through 550 C, gone from 560 C onward.
+! Edit mass(3)/mass(4)/mass(92)/mass(9) to 72/16/12/152 to repeat for
+! composition B (liquidus falls between 495 C and 498 C there).
+! =============================================================================
+temperature       = 450:600:10
+pressure          = 1.0
+mass(3)           = 74.0
+mass(4)           = 17.0
+mass(92)          = 9.0
+mass(9)           = 144.0
+temperature unit  = C
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 1
+write json        = .TRUE.
+output            = flibe_liquidus_sweep_A
+reinit            = .TRUE.
