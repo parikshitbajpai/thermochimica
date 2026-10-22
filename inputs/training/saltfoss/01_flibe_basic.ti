@@ -1,0 +1,23 @@
+! =============================================================================
+! SaltFoss Training — Segment 2 (0:08-0:16): First FLiBe equilibrium
+! =============================================================================
+! Teaching point: input is ELEMENTS, not compounds. We give Li, Be, F — the
+! code decides what forms. Composition is nominally 2LiF + 1BeF2 (the eutectic
+! stoichiometry), with F perturbed by 1 part in 400,000 to avoid the exact
+! under-determined case covered in Segment 3.
+!
+! Run:   ./bin/InputScriptMode inputs/training/saltfoss/01_flibe_basic.ti
+! Expect: single MSFL (SUBQ) liquid phase, trace gas_ideal, DEBUG: Successful exit.
+! Walk the printed blocks: phase assemblage -> speciation -> element chemical
+! potentials -> integral Gibbs energy -> functional norm (convergence measure).
+! =============================================================================
+temperature       = 900
+pressure          = 1.0
+mass(3)           = 2.0        ! Li
+mass(4)           = 1.0        ! Be
+mass(9)           = 4.00001    ! F  (2*LiF + 1*BeF2, perturbed)
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

@@ -1,0 +1,23 @@
+! =============================================================================
+! SaltFoss Training — Segment 4 (0:28-0:40): Redox control via F/U ratio (2/3)
+! =============================================================================
+! Same base salt, F = 135.5 mol -- exactly midway between the UF3 endpoint
+! (135.0) and the UF4 endpoint (136.0). This is the headline result of the
+! segment: the computed U(IV)/U(III) ratio comes out to 1.000, i.e. the F
+! mass balance you type in IS the redox state you get out.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/03_redox_UF35.ti
+! Verified output: UF3 = 5.75e-03,  mu_U = -258.1 kJ/mol
+! See 03_redox_sweep.ti for the temperature-dependence of this ratio.
+! =============================================================================
+temperature       = 900
+pressure          = 1.0
+mass(3)           = 66.0       ! Li
+mass(4)           = 33.0       ! Be
+mass(92)          = 1.0        ! U
+mass(9)           = 135.5      ! F  -- midway UF3/UF4 (U(IV)/U(III) ~ 1)
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

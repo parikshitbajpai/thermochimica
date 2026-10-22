@@ -1,0 +1,22 @@
+! =============================================================================
+! SaltFoss Training — Segment 4 (0:28-0:40): Redox control via F/U ratio (3/3)
+! =============================================================================
+! Same base salt, F = 135.9 mol -- near the UF4 endpoint (136.0), i.e. a
+! strongly OXIDIZING melt. Compare UF3 content (should be ~10x lower than
+! 03_redox_UF3.ti) and mu_U (should be far more negative, i.e. U more
+! stabilized as U(IV)) against the other two files in this trio.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/03_redox_UF39.ti
+! Verified output: UF3 = 1.15e-03,  mu_U = -320.9 kJ/mol
+! =============================================================================
+temperature       = 900
+pressure          = 1.0
+mass(3)           = 66.0       ! Li
+mass(4)           = 33.0       ! Be
+mass(92)          = 1.0        ! U
+mass(9)           = 135.9      ! F  -- near UF4 (oxidizing)
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

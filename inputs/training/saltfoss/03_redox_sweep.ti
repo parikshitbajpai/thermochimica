@@ -1,0 +1,34 @@
+! =============================================================================
+! SaltFoss Training — Segment 4 (0:28-0:40): Redox control -- temperature sweep
+! =============================================================================
+! Same midpoint salt as 03_redox_UF35.ti (F=135.5, U(IV)/U(III) ~ 1), swept
+! 800-1400 K in 50 K steps to show the redox ratio is nearly temperature
+! independent. `reinit` warm-starts each point from the previous solution
+! (big speedup on a sweep); `heat capacity` also reports Cp/H/S.
+!
+! This writes JSON to outputs/salt_training_sweep -- feed it to
+! doc/training/make_figures.py for the U(IV)/U(III) figure.
+!
+! IMPORTANT JSON gotcha (verified): the MSFL phase block has NO "species" key.
+! It uses "cations"/"anions"/"quadruplets" (MQMQA/SUBQ format). Cation names
+! are truncated to 8 characters -- U(IV) constituents appear as "U[CN=VI]",
+! "U[CN=VII" (truncated), and "U[Dimer]" (counts double, it's a U2 dimer).
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/03_redox_sweep.ti
+! Verified: 13 points, ~4.8 s wall time, U(IV)/U(III) = 1.000 at every T.
+! =============================================================================
+temperature       = 800:1400:50
+pressure          = 1.0
+mass(3)           = 66.0       ! Li
+mass(4)           = 33.0       ! Be
+mass(92)          = 1.0        ! U
+mass(9)           = 135.5      ! F
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 1
+write json        = .TRUE.
+output            = salt_training_sweep
+reinit            = .TRUE.
+heat capacity     = .TRUE.

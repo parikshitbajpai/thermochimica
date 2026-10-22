@@ -1,0 +1,25 @@
+! =============================================================================
+! SaltFoss Training — Segment 3 (0:16-0:28): The chemical potential trap (2/3)
+! =============================================================================
+! Remedy #1: perturb one mass slightly off the exact stoichiometric ratio.
+! This breaks the degeneracy and gives element potentials a well-defined
+! (if numerically "arbitrary") value. Compare mu_F, mu_Be, mu_Li below against
+! 02a_underdetermined.ti -- individual potentials swing by 20-40 kJ/mol -- but
+! then compute mu(LiF)=mu_Li+mu_F and mu(BeF2)=mu_Be+2*mu_F and see those are
+! INVARIANT to <0.1 kJ/mol. Only the species-level combination is physical.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/02b_perturbed.ti
+! Verified output (kJ/mol): mu_F=-97.9  mu_Be=-927.1  mu_Li=-574.2
+!   -> mu(LiF) = -672.10    mu(BeF2) = -1122.95   (matches 02a to <0.1 kJ/mol)
+! Integral Gibbs energy is IDENTICAL to 02a: -2.46715E+06 J.
+! =============================================================================
+temperature       = 900
+pressure          = 1.0
+mass(3)           = 2.0        ! Li
+mass(4)           = 1.0        ! Be
+mass(9)           = 4.00001    ! F  -- perturbed by 1 part in 400,000
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

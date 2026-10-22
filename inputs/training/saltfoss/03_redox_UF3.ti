@@ -1,0 +1,23 @@
+! =============================================================================
+! SaltFoss Training — Segment 4 (0:28-0:40): Redox control via F/U ratio (1/3)
+! =============================================================================
+! Base salt 66 LiF / 33 BeF2 / 1 U at 900 K. The F mass balance sets the
+! effective fluorination state of U -- here F = 135.0 mol targets a fully
+! reduced UF3 endpoint (F/U = 3.0 excess beyond the LiF+BeF2 balance).
+! Compare UF3 content and mu_U against 03_redox_UF35.ti and 03_redox_UF39.ti.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/03_redox_UF3.ti
+! Verified output: UF3 in MSFL = 1.14e-02 mol-fraction-equivalent species
+!   mu_U = -57.6 kJ/mol
+! =============================================================================
+temperature       = 900
+pressure          = 1.0
+mass(3)           = 66.0       ! Li
+mass(4)           = 33.0       ! Be
+mass(92)          = 1.0        ! U
+mass(9)           = 135.0      ! F  -- targets UF3 (reduced)
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

@@ -1,0 +1,30 @@
+! =============================================================================
+! SaltFoss Training — Segment 3 (0:16-0:28): The chemical potential trap (3/3)
+! =============================================================================
+! Remedy #2: fuzzy stoichiometry. Instead of hand-perturbing a mass, set
+! fuzzy = .TRUE. and Thermochimica adds a small random perturbation
+! (+/- dFuzzMag, default 1e-12) to each nonzero entry of the stoichiometry
+! matrix before solving (src/setup/RandomizeStoichiometry.f90). Composition
+! here is EXACT (F=4.0, same as 02a) -- the fuzz, not the input, breaks the
+! degeneracy.
+!
+! CAVEAT (from the user manual): fuzzy stoichiometry can introduce small
+! amounts of spurious trace phases. Always inspect post-processed output.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/02c_fuzzy.ti
+! Verified output (kJ/mol): mu_F=-97.9  mu_Be=-927.1  mu_Li=-574.2
+!   -> mu(LiF) = -672.10    mu(BeF2) = -1122.95
+! Matches 02b_perturbed.ti essentially exactly, and the species combinations
+! still match 02a to <0.1 kJ/mol.
+! =============================================================================
+temperature       = 900
+pressure          = 1.0
+mass(3)           = 2.0        ! Li
+mass(4)           = 1.0        ! Be
+mass(9)           = 4.0        ! F  -- EXACT, same as 02a
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2
+fuzzy             = .TRUE.

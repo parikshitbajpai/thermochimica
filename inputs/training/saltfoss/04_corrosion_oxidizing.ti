@@ -1,0 +1,30 @@
+! =============================================================================
+! SaltFoss Training — Segment 5 (0:40-0:52): Corrosion follows redox (3/3)
+! =============================================================================
+! F = 135.9 (near the UF4 endpoint, oxidizing). This is the money result:
+! dissolved Cr rises ~8 ORDERS OF MAGNITUDE from 04_corrosion_reducing.ti to
+! here, across what a salt chemist might consider a narrow redox window.
+! Business takeaway: keep the UF4/UF3 buffer reduced and Cr stays in the
+! alloy; let it oxidize and the structural material dissolves. This exact
+! quantity becomes a boundary condition for a MOOSE corrosion model (next
+! session).
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/04_corrosion_oxidizing.ti
+! Verified output: Cr2+ = 2.87e-05,  Cr3+ = 1.35e-07
+! Full trio summary (mol fraction Cr2+ in melt):
+!   F=135.0 (reducing):  1.08e-14
+!   F=135.5 (mid):       3.65e-07
+!   F=135.9 (oxidizing): 2.87e-05        <- ~9 orders of magnitude rise
+! =============================================================================
+temperature       = 900
+pressure          = 1.0
+mass(3)           = 66.0       ! Li
+mass(4)           = 33.0       ! Be
+mass(92)          = 1.0        ! U
+mass(24)          = 0.01       ! Cr  -- structural-alloy tracer
+mass(9)           = 135.9      ! F   -- oxidizing (near UF4)
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

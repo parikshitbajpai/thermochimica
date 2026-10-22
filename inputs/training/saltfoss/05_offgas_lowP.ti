@@ -1,0 +1,31 @@
+! =============================================================================
+! SaltFoss Training — Segment 6 (0:52-0:58): Off-gassing (2/2) -- vapor speciation
+! =============================================================================
+! Same composition as 05_offgas_1atm.ti, but at 1e-6 atm -- representative of
+! a cover-gas / off-gas system pressure where vapor equilibrium actually
+! matters. Now gas_ideal IS stable (~100 mol) and carries real speciation:
+! mostly carrier FLi/F2Be vapor, but also UF4, ILi, Cs, CsF, CsI -- i.e. the
+! volatile U and fission-product inventory becomes visible.
+!
+! CAVEAT to state out loud: this is the EQUILIBRIUM vapor composition, not a
+! release RATE. Getting from here to an actual off-gas rate needs transport
+! -- the MOOSE coupling in next session's hour.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/05_offgas_lowP.ti
+! Verified output (mole fraction in gas_ideal, ~99.7 mol total):
+!   FLi    0.647        F2Be   0.330        UF4    9.7e-03
+!   ILi    2.0e-04       Cs    1.4e-04      CsF    6.1e-05       CsI  1.2e-06
+! =============================================================================
+temperature       = 1200
+pressure          = 1.0E-6
+mass(3)           = 66.0       ! Li
+mass(4)           = 33.0       ! Be
+mass(92)          = 1.0        ! U
+mass(55)          = 0.02       ! Cs -- volatile fission product
+mass(53)          = 0.02       ! I  -- volatile fission product
+mass(9)           = 135.0      ! F
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

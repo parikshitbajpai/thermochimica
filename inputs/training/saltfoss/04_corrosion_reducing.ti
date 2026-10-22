@@ -1,0 +1,23 @@
+! =============================================================================
+! SaltFoss Training — Segment 5 (0:40-0:52): Corrosion follows redox (1/3)
+! =============================================================================
+! Same base salt as Segment 4, plus 0.01 mol Cr (a structural-alloy tracer).
+! F = 135.0 (reduced, UF3 endpoint) -- this is the REDUCING case. Compare
+! dissolved Cr2+/Cr3+ against 04_corrosion_mid.ti and 04_corrosion_oxidizing.ti:
+! Cr solubility should be essentially zero here.
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/04_corrosion_reducing.ti
+! Verified output: Cr2+ = 1.08e-14,  Cr3+ = 8.56e-22  (mol fraction, melt)
+! =============================================================================
+temperature       = 900
+pressure          = 1.0
+mass(3)           = 66.0       ! Li
+mass(4)           = 33.0       ! Be
+mass(92)          = 1.0        ! U
+mass(24)          = 0.01       ! Cr  -- structural-alloy tracer
+mass(9)           = 135.0      ! F   -- reducing (UF3 endpoint)
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2

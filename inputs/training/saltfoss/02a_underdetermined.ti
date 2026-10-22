@@ -1,0 +1,27 @@
+! =============================================================================
+! SaltFoss Training — Segment 3 (0:16-0:28): The chemical potential trap (1/3)
+! =============================================================================
+! EXACT stoichiometry: F = 2*Li + 2*Be = 4.0 precisely. Above ~400 C a single
+! liquid phase forms containing 1 mol LiF + 1 mol BeF2 -- 2 species spanning
+! 3 elements. The element potentials (Li, Be, F individually) are therefore
+! mathematically UNDER-DETERMINED: only species-level combinations (mu_Li+mu_F,
+! mu_Be+2*mu_F) are physically meaningful.
+!
+! Reference: Piro, Poschmann & Bajpai, J. Nucl. Mater. 526:151756 (2019).
+! See also doc/thermochimica_user_manual.pdf Sec 3.9 "Fuzzy Stoichiometry".
+!
+! Run:    ./bin/InputScriptMode inputs/training/saltfoss/02a_underdetermined.ti
+! Verified output (kJ/mol): mu_F=-118.9  mu_Be=-885.0  mu_Li=-553.2
+!   -> mu(LiF) = mu_Li+mu_F = -672.14    mu(BeF2) = mu_Be+2*mu_F = -1122.87
+! Compare directly against 02b_perturbed.ti and 02c_fuzzy.ti.
+! =============================================================================
+temperature       = 900
+pressure          = 1.0
+mass(3)           = 2.0        ! Li
+mass(4)           = 1.0        ! Be
+mass(9)           = 4.0        ! F  -- EXACT, no perturbation
+temperature unit  = K
+pressure unit     = atm
+mass unit         = moles
+data file         = data/MSD-TC_V4.1_Fluorides_No_Func.dat
+print mode        = 2
