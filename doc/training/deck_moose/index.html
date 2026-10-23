@@ -1,0 +1,595 @@
+<title>Thermochimica MOOSE Coupling</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* ===========================================================================
+   Design plan
+   Same crucible system as the Hour 1 deck (doc/training/deck/index.html):
+   full-bleed scroll-snap track, graphite/ink surfaces, hot-salt amber accent,
+   fluoride-teal for data, slab display + humanist sans + tabular mono.
+   =========================================================================== */
+:root {
+  --bg: #15191c;
+  --bg-raised: #1d2226;
+  --fg: #eef1f0;
+  --fg-dim: #9aa5a3;
+  --accent: #e8954a;       /* hot-salt amber */
+  --teal: #4fb3a9;          /* fluoride / data teal */
+  --rule: #ffffff1a;
+  --card: #ffffff0d;
+  --shadow: 0 20px 50px -20px #00000066;
+  color-scheme: dark;
+
+  --font-display: 'Space Grotesk', 'Archivo Expanded', sans-serif;
+  --font-body: 'Source Sans 3', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+}
+:root[data-theme="light"] { --bg: #15191c; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--bg); }
+body {
+  font-family: var(--font-body);
+  color: var(--fg);
+  background: var(--bg);
+  overflow: hidden;
+  padding-left: max(0px, env(safe-area-inset-left, 0px));
+  padding-right: max(0px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+p { margin: 0; }
+
+#track {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+#track::-webkit-scrollbar { display: none; }
+
+.slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(26px, 5.5vh, 56px) clamp(20px, 6vw, 92px);
+  position: relative;
+  overflow-y: auto;
+}
+
+.seg-label {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.slide h1 { font-size: clamp(1.5rem, 3.4vw, 2.3rem); line-height: 1.12; font-weight: 700; }
+.slide h2 { font-size: clamp(1.15rem, 2.1vw, 1.45rem); font-weight: 600; margin-bottom: 14px; }
+.slide .lede {
+  font-size: clamp(0.92rem, 1.25vw, 1.05rem);
+  color: var(--fg-dim);
+  max-width: 68ch;
+  margin-top: 12px;
+  line-height: 1.55;
+}
+
+.cols { display: flex; gap: clamp(18px, 2.6vw, 36px); margin-top: 18px; flex-wrap: wrap; align-items: flex-start; }
+.cols > * { flex: 1; min-width: 0; min-width: 260px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+.card h3 {
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  font-family: var(--font-body);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+code, .code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: #00000055;
+  padding: 2px 6px;
+  border-radius: 5px;
+  color: var(--teal);
+}
+pre.code-block {
+  font-family: var(--font-mono);
+  font-size: clamp(0.65rem, 1.05vw, 0.82rem);
+  background: #0000005c;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  line-height: 1.5;
+  color: var(--fg);
+  margin: 0;
+}
+pre.code-block .cmt { color: var(--fg-dim); }
+pre.code-block .num { color: var(--accent); }
+pre.code-block .kw { color: var(--teal); }
+pre.code-block .del { color: #e8694a; text-decoration: line-through; }
+pre.code-block .add { color: var(--teal); }
+
+.eq {
+  font-family: var(--font-mono);
+  font-size: clamp(0.82rem, 1.35vw, 1.02rem);
+  background: #0000004a;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 18px;
+  margin: 14px 0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+table.datatable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(0.68rem, 1vw, 0.82rem);
+  margin-top: 10px;
+}
+table.datatable th, table.datatable td {
+  text-align: left;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+table.datatable th {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  letter-spacing: 0.03em;
+}
+table.datatable td.num { text-align: right; }
+
+figure { margin: 14px 0 0; }
+figure img { width: 100%; border-radius: 10px; border: 1px solid var(--rule); display: block; max-width: 100%; }
+figcaption { font-size: 0.76rem; color: var(--fg-dim); margin-top: 6px; font-family: var(--font-mono); }
+
+ol.steps, ul.points { margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+ol.steps { padding-left: 1.3em; }
+ol.steps li { font-size: clamp(0.88rem, 1.2vw, 1rem); line-height: 1.5; padding-left: 4px; }
+ul.points { list-style: none; }
+ul.points li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: clamp(0.88rem, 1.2vw, 1rem);
+  line-height: 1.5;
+}
+ul.points li::before {
+  content: "";
+  flex: 0 0 6px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 0.5em;
+}
+ul.points li b { color: var(--fg); }
+ul.points li .dim { color: var(--fg-dim); }
+
+.result {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+  color: var(--teal);
+  margin-top: 4px;
+}
+
+.source-line {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--fg-dim);
+  margin-top: 14px;
+}
+
+.badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-right: 8px;
+}
+.badge.current { background: #4fb3a92a; color: var(--teal); border: 1px solid #4fb3a955; }
+.badge.redesign { background: #e8954a2a; color: var(--accent); border: 1px solid #e8954a55; }
+
+.center-slide { align-items: center; text-align: center; }
+.center-slide .lede { max-width: 62ch; margin-left: auto; margin-right: auto; }
+
+#dots {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 7px;
+  z-index: 20;
+  background: #00000066;
+  padding: 7px 11px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #ffffff33;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+.dot.active { background: var(--accent); transform: scale(1.35); }
+
+.arrow-zone {
+  position: fixed;
+  top: 0; bottom: 0;
+  width: 64px;
+  z-index: 15;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff22;
+  font-size: 1.6rem;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+}
+.arrow-zone:hover { opacity: 1; color: #ffffff66; }
+#prev { left: 0; padding-left: env(safe-area-inset-left, 0px); }
+#next { right: 0; padding-right: env(safe-area-inset-right, 0px); }
+
+#counter {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  z-index: 20;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--fg-dim);
+  background: #00000066;
+  padding: 4px 9px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+
+@media (max-width: 640px) {
+  .arrow-zone { display: none; }
+  .cols { flex-direction: column; }
+  .slide { padding-left: 16px; padding-right: 16px; }
+  table.datatable { display: block; overflow-x: auto; }
+  .card { max-width: 100%; }
+}
+
+/* ---- print: one slide per page, nav chrome hidden ----------------------- */
+@media print {
+  @page { size: letter landscape; margin: 0; }
+  html, body { height: auto; overflow: visible; background: var(--bg); }
+  #track {
+    display: block;
+    height: auto;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+  .slide {
+    width: 100%;
+    height: 7.5in;
+    flex: none;
+    scroll-snap-align: none;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+  }
+  .slide:last-child { page-break-after: auto; break-after: auto; }
+  #prev, #next, #counter, #dots { display: none; }
+}
+</style>
+
+<div id="track">
+
+<!-- 1 — Title -->
+<section class="slide center-slide">
+  <h1>Thermochimica + MOOSE</h1>
+  <p class="lede">Hour 2 of the SaltFoss training. Hour 1 computed equilibrium speciation, redox, and off-gassing at single points. This hour makes those same quantities spatial fields inside a MOOSE model, shows what it costs to make that affordable, and previews the pending interface redesign.</p>
+  <p class="lede" style="margin-top:8px">Every number in this deck comes from a calculation run on a stated input file in <code>inputs/training/saltfoss_moose/</code>.</p>
+</section>
+
+<!-- 2 — Segment 1: the hand-off -->
+<section class="slide">
+  <div class="seg-label">Segment 1 · 0:00&ndash;0:08</div>
+  <h1>Why spatial</h1>
+  <ul class="points">
+    <li>Hour 1 closed with: <b>"This is equilibrium only. Rates, transport, and coupling to a reactor model come next hour with MOOSE."</b> This hour delivers that.</li>
+    <li>Thermochimica lives inside MOOSE's <code>chemical_reactions</code> module &mdash; there is no dedicated Thermochimica module.</li>
+    <li><code>[ChemicalComposition]</code> is an Action: it creates scalar AuxVariables and one <code>ThermochimicaData</code> UserObject that solves an independent equilibrium at every selected node or element.</li>
+    <li>Usually no finite-element system is involved &mdash; <code>[Problem] solve = false</code> is the normal pattern, unless something couples to the output (Segment 6).</li>
+  </ul>
+</section>
+
+<!-- 3 — Real-world motivation: VTB MSFR -->
+<section class="slide">
+  <div class="seg-label">Segment 1 · Real-world case</div>
+  <h1>Depletion-driven thermochemistry</h1>
+  <p class="lede">The Virtual Test Bed's one Thermochimica model: <code>msr/msfr/thermochemistry/thermo.i</code>, a Molten Salt Fast Reactor. Griffin depletion and Pronghorn thermal-hydraulics feed a spatially-resolved Thermochimica solve at every mesh node.</p>
+  <div class="card" style="margin-top:16px">
+    <h3>Documented result</h3>
+    <p class="lede" style="margin-top:4px">As the fuel salt depletes without chemistry control, the fluorine potential rises &mdash; and <b style="color:var(--fg)">iodine volatility increases by at least four orders of magnitude.</b></p>
+  </div>
+  <p class="lede" style="margin-top:14px">Directly relevant to off-gas system design: a redox drift you cannot see in a single-point calculation becomes visible, and quantifiable, as a spatial field.</p>
+</section>
+
+<!-- 4 — Segment 2: current interface anatomy -->
+<section class="slide">
+  <div class="seg-label">Segment 2 · 0:08&ndash;0:20</div>
+  <h1>Current interface anatomy</h1>
+  <div class="cols">
+    <pre class="code-block"><span class="cmt">! 10_current_syntax.i</span>
+[GlobalParams]
+  elements = <span class="num">'Mo Ru'</span>
+  output_phases = <span class="num">'BCCN HCPN'</span>
+  output_element_potentials = <span class="num">'mu:Mo mu:Ru'</span>
+[]
+
+[ChemicalComposition]
+  [thermo]
+    <span class="kw">thermofile</span> = NobleMetals-Kaye.dat
+    <span class="kw">tunit</span> = K
+    <span class="kw">punit</span> = atm
+    <span class="kw">munit</span> = moles
+    temperature = <span class="num">2250</span>
+  []
+[]</pre>
+    <div class="card">
+      <h3>Four load-bearing pieces</h3>
+      <ul class="points">
+        <li><code>[GlobalParams]</code> carries the flat <code>output_*</code> selectors.</li>
+        <li><code>thermofile</code>/<code>tunit</code>/<code>punit</code>/<code>munit</code> name the database and units.</li>
+        <li>Variable names <b>encode</b> the selector: <code>mu:Mo</code>, <code>BCCN:Mo</code>, <code>vp:gas_ideal:Mo</code>.</li>
+        <li><code>solve = false</code> + <code>Steady</code>: Thermochimica is the only physics.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5 — Segment 3: spatial redox hands-on -->
+<section class="slide">
+  <div class="seg-label">Segment 3 · 0:20&ndash;0:34 &middot; Hands-on 1</div>
+  <h1>Spatial redox</h1>
+  <p class="lede">Hour 1 ran three separate calculations to sweep F from 135.0 (reducing) to 135.9 (oxidizing). Here it's one mesh: <code>FunctionIC</code> varies F linearly with position, and the UserObject solves an independent equilibrium at every node.</p>
+  <table class="datatable" style="margin-top:16px">
+    <tr><th>x</th><th>F (mol)</th><th>&mu;_F (J/mol)</th></tr>
+    <tr><td class="num">0.00</td><td class="num">135.000</td><td class="num">&minus;534,935.9</td></tr>
+    <tr><td class="num">0.25</td><td class="num">135.225</td><td class="num">&minus;479,362.6</td></tr>
+    <tr><td class="num">0.50</td><td class="num">135.450</td><td class="num">&minus;471,243.2</td></tr>
+    <tr><td class="num">0.75</td><td class="num">135.675</td><td class="num">&minus;463,913.8</td></tr>
+    <tr><td class="num">1.00</td><td class="num">135.900</td><td class="num">&minus;452,596.3</td></tr>
+  </table>
+  <p class="lede" style="margin-top:14px"><b style="color:var(--fg)">This is the first thing this hour can do that standalone Thermochimica cannot</b> &mdash; a redox profile in one solve, not five.</p>
+  <p class="source-line">Run: <code>&lt;chemical_reactions-opt&gt; -i 11_redox_sweep.i</code></p>
+</section>
+
+<!-- 6 — Segment 3: the limitation -->
+<section class="slide">
+  <div class="seg-label">Segment 3 · Limitation to state out loud</div>
+  <h1>The current interface cannot split U(III)/U(IV)</h1>
+  <ul class="points">
+    <li><code>output_species</code> only resolves a plain species name.</li>
+    <li>MSFL's U(III)/U(IV) forms &mdash; <code>U[3+]</code>, <code>U[CN=VI]</code>, <code>U[CN=VII]</code>, <code>U[Dimer]</code> &mdash; are MQMQA cation <b>constituents</b>, not species.</li>
+    <li>There is no flat output parameter that reaches a sublattice constituent. <code>mu:F</code> is the best redox proxy available on this interface.</li>
+  </ul>
+  <div class="card" style="margin-top:16px">
+    <h3>Fixed in the redesign</h3>
+    <p class="lede" style="margin-top:4px">The <code>ConstituentFractions</code> typed output (Segment 7) reads the oxidation-state split directly. This is new capability, not just new syntax.</p>
+  </div>
+</section>
+
+<!-- 7 — Segment 4: off-gassing -->
+<section class="slide">
+  <div class="seg-label">Segment 4 · 0:34&ndash;0:44</div>
+  <h1>Off-gassing</h1>
+  <p class="lede">Same composition and conditions as Hour 1's <code>05_offgas_lowP.ti</code> (Li=66, Be=33, U=1, Cs=0.02, I=0.02, F=135.0, 1200&nbsp;K, 1e&minus;6&nbsp;atm) &mdash; run through the MOOSE action instead of <code>InputScriptMode</code>.</p>
+  <div class="card" style="margin-top:16px">
+    <h3>Result, both ways</h3>
+    <table class="datatable">
+      <tr><th>Quantity</th><th>Hour 1 (standalone)</th><th>This hour (MOOSE)</th></tr>
+      <tr><td>gas_ideal</td><td class="num">99.729 mol</td><td class="num">99.729 mol</td></tr>
+    </table>
+    <p class="lede" style="margin-top:8px">p_CsI = 1.236&times;10<sup>&minus;12</sup> atm &middot; p_CsF = 6.133&times;10<sup>&minus;11</sup> atm</p>
+  </div>
+  <p class="lede" style="margin-top:14px">Caveat, repeated from Hour 1, now spatially relevant: this is the <b style="color:var(--fg)">equilibrium</b> vapor composition, not a release rate. A rate needs transport.</p>
+</section>
+
+<!-- 8 — Segment 5: performance -->
+<section class="slide">
+  <div class="seg-label">Segment 5 · 0:44&ndash;0:54</div>
+  <h1>Making it affordable</h1>
+  <p class="lede">41 independent equilibrium solves, same redox sweep as Segment 3, on the current interface's <code>reinitialization_type</code> &mdash; the per-node analog of Hour 1's <code>reinit = .TRUE.</code>.</p>
+  <table class="datatable" style="margin-top:16px">
+    <tr><th>Mode</th><th>Wall time</th></tr>
+    <tr><td><code>reinitialization_type = none</code> &mdash; every node from scratch</td><td class="num">9.1 s</td></tr>
+    <tr><td><code>reinitialization_type = nodal</code> &mdash; warm-started</td><td class="num">5.6 s</td></tr>
+  </table>
+  <p class="lede" style="margin-top:14px"><b style="color:var(--fg)">State out loud:</b> this is the current interface's single reinit enum. The redesign replaces it with a forked-worker + shared-memory model &mdash; <code>batch_size</code>, three <code>warm_start</code> modes, <code>report_performance</code> counters, real thread/MPI parallelism. A materially larger speedup than shown here.</p>
+</section>
+
+<!-- 9 — Segment 6: coupling out hands-on -->
+<section class="slide">
+  <div class="seg-label">Segment 6 · 0:54&ndash;1:05 &middot; Hands-on 2</div>
+  <h1>Coupling out</h1>
+  <p class="lede">The other half of Hour 1's hand-off: turning a redox/corrosion quantity into a boundary condition for a coupled model. Segment 3's <code>mu:F</code> profile drives a toy "corrosion marker" diffusion field &mdash; a real <code>[Variables]</code> field solved with Newton.</p>
+  <pre class="code-block" style="margin-top:16px"><span class="cmt">! 14_coupled_bc.i</span>
+[BCs]
+  [right]
+    <span class="kw">type</span> = CoupledVarNeumannBC
+    variable = marker
+    boundary = right
+    <span class="kw">v</span> = <span class="num">'mu:F'</span>
+    coef = <span class="num">1e-6</span>
+  []
+[]</pre>
+  <p class="lede" style="margin-top:14px"><span class="result">Solve Converged!</span> &middot; marker_right = &minus;0.4526</p>
+  <p class="lede" style="margin-top:10px">A real model would couple the Cr dissolution rate from Hour 1 (spanning ~9 orders of magnitude with redox) through this same mechanism.</p>
+</section>
+
+<!-- 10 — Segment 7: the redesign, syntax -->
+<section class="slide">
+  <div class="seg-label">Segment 7 · 1:05&ndash;1:20</div>
+  <h1>The redesign, side by side</h1>
+  <div class="cols">
+    <div>
+      <span class="badge current">current</span>
+      <pre class="code-block" style="margin-top:10px">[GlobalParams]
+  output_element_potentials = <span class="num">'mu:F'</span>
+[]
+[ChemicalComposition]
+  [salt]
+    <span class="del">thermofile</span> = ...
+    <span class="del">tunit</span> = K
+  []
+[]</pre>
+    </div>
+    <div>
+      <span class="badge redesign">tc_api</span>
+      <pre class="code-block" style="margin-top:10px">[ChemicalComposition]
+  [salt]
+    <span class="add">thermodynamic_database</span> = ...
+    <span class="add">temperature_unit</span> = K
+    [Outputs]
+      [ElementPotentials]
+        [mu_F]       <span class="cmt">&larr; your name</span>
+          element = F
+        []
+      []
+    []
+  []
+[]</pre>
+    </div>
+  </div>
+  <p class="lede" style="margin-top:14px">The old parameter names are <b style="color:var(--fg)">removed, not deprecated</b>. An input written against <code>next</code> fails with "unused parameter" on <code>tc_api</code> &mdash; only the flat <code>output_*</code> family survives, deprecated.</p>
+</section>
+
+<!-- 11 — Segment 7: new capability -->
+<section class="slide">
+  <div class="seg-label">Segment 7 · New capability, not just syntax</div>
+  <h1>ConstituentFractions closes the gap</h1>
+  <pre class="code-block"><span class="cmt">! 20_redox_sweep_typed.i -- same mesh, same F sweep as Segment 3</span>
+[ConstituentFractions]
+  [x_U3]
+    phase = MSFL
+    sublattice = <span class="num">1</span>
+    constituent = <span class="num">'U[3+]'</span>
+  []
+  [x_U4]
+    phase = MSFL
+    sublattice = <span class="num">1</span>
+    constituent = <span class="num">'U[CN=VI]'</span>
+  []
+[]</pre>
+  <table class="datatable" style="margin-top:14px">
+    <tr><th>x</th><th>&mu;_F (J/mol)</th><th>x_U(III)</th><th>x_U(IV)</th></tr>
+    <tr><td class="num">0.00</td><td class="num">&minus;534,935.9</td><td class="num">1.14&times;10<sup>&minus;2</sup></td><td class="num">1.73&times;10<sup>&minus;6</sup></td></tr>
+    <tr><td class="num">1.00</td><td class="num">&minus;452,596.3</td><td class="num">1.15&times;10<sup>&minus;3</sup></td><td class="num">8.53&times;10<sup>&minus;3</sup></td></tr>
+  </table>
+  <p class="lede" style="margin-top:14px">&mu;_F matches Segment 3 exactly. The oxidation-state split is new: Segment 3's current interface could not produce these two columns at all.</p>
+</section>
+
+<!-- 12 — Reference / close -->
+<section class="slide">
+  <h1>Reference material</h1>
+  <ul class="points">
+    <li><code>inputs/training/saltfoss_moose/*.i</code> &mdash; every input shown in this deck, numbered to continue Hour 1's sequence.</li>
+    <li><code>doc/training/moose-runsheet.md</code> &mdash; the presenter run-sheet with every verified number.</li>
+    <li><code>doc/training/moose-interface-cheatsheet.md</code> &mdash; the full current-vs-redesigned parameter and selector tables, all 11 typed output families.</li>
+    <li><code>doc/training/moose-handout.md</code> &mdash; the attendee one-page reference.</li>
+    <li><code>typed_outputs_subblocks.i</code> (MOOSE repo) &mdash; two independent ChemicalComposition systems on disjoint mesh blocks.</li>
+    <li><code>modules/combined/examples/thermochimica_phase_field/phase_restricted_gibbs.i</code> &mdash; a phase-restricted Gibbs energy coupled into an Allen-Cahn free energy.</li>
+  </ul>
+  <p class="lede" style="margin-top:16px">A bug surfaced and fixed during this training: a subblock-level <code>pressure</code> on <code>tc_api</code> was silently overridden by the common block's default. Fixed via <code>applyCommonUserSetParameters()</code>; regression test <code>[pressure_override]</code> in the chemical_reactions test suite.</p>
+</section>
+
+</div>
+
+<button class="arrow-zone" id="prev" aria-label="Previous slide">&lsaquo;</button>
+<button class="arrow-zone" id="next" aria-label="Next slide">&rsaquo;</button>
+<div id="counter"></div>
+<div id="dots"></div>
+
+<script>
+(function () {
+  var track = document.getElementById('track');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var dotsEl = document.getElementById('dots');
+  var counterEl = document.getElementById('counter');
+  var current = 0;
+
+  slides.forEach(function (_, i) {
+    var b = document.createElement('button');
+    b.className = 'dot' + (i === 0 ? ' active' : '');
+    b.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    b.addEventListener('click', function () { goTo(i); });
+    dotsEl.appendChild(b);
+  });
+  var dots = Array.prototype.slice.call(dotsEl.children);
+  counterEl.textContent = '1 / ' + slides.length;
+
+  function goTo(i) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    current = i;
+    slides[i].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    dots.forEach(function (d, j) { d.classList.toggle('active', j === i); });
+    counterEl.textContent = (i + 1) + ' / ' + slides.length;
+    try { sessionStorage.setItem('tc-moose-deck-slide', String(i)); } catch (e) {}
+  }
+
+  document.getElementById('prev').addEventListener('click', function () { goTo(current - 1); });
+  document.getElementById('next').addEventListener('click', function () { goTo(current + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); goTo(current + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); goTo(current - 1); }
+  });
+
+  var scrollTimer = null;
+  track.addEventListener('scroll', function () {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(function () {
+      var idx = Math.round(track.scrollLeft / track.clientWidth);
+      idx = Math.max(0, Math.min(slides.length - 1, idx));
+      if (idx !== current) {
+        current = idx;
+        dots.forEach(function (d, j) { d.classList.toggle('active', j === idx); });
+        counterEl.textContent = (idx + 1) + ' / ' + slides.length;
+      }
+    }, 80);
+  });
+
+  try {
+    var saved = sessionStorage.getItem('tc-moose-deck-slide');
+    if (saved !== null) goTo(parseInt(saved, 10));
+  } catch (e) {}
+})();
+</script>
